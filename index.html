@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>DSETrack</title>
+<title>DSETracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -56,8 +56,9 @@
   animation-timing-function: ease-in-out;
 }
 
+
 @media (hover: none), (pointer: coarse), (max-width: 768px) {
-  div[class*="z-[100]"] {
+  .dse-tooltip {
     display: none !important;
   }
 }
@@ -67,12 +68,18 @@
   input[type="number"],
   input[type="date"],
   textarea,
-  select {
+  select:not(.sort-select) {
     width: 100%;
     min-width: 0;
     max-width: 100%;
     box-sizing: border-box;
     font-size: 16px !important;
+  }
+
+  .sort-select {
+    width: auto !important;
+    max-width: 9rem;
+    font-size: 10px !important;
   }
 }
 
@@ -155,7 +162,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     var el = document.getElementById('boot-error');
     if (!el) return;
     el.style.display = 'block';
-    el.textContent = 'DSETrack failed to start\n========================\n\n' + msg +
+    el.textContent = 'DSETracker failed to start\n========================\n\n' + msg +
       '\n\nWhat to do:\n  1. Open DevTools (F12) → Console and copy the first red error.\n' +
       '  2. Check your internet / ad-blocker / school firewall is not blocking cdn.jsdelivr.net and unpkg.com.\n' +
       '  3. Try a different browser (Chrome, Edge, Firefox).\n  4. Try a phone hotspot.';
@@ -247,7 +254,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       'toast.imported': 'Backup imported successfully',
       'toast.importFailed': 'Import failed — invalid JSON file',
       'toast.cutoffSaved': 'Cut-off thresholds updated',
-      'modal.welcome': 'Welcome to DSETrack',
+      'modal.welcome': 'Welcome to DSETracker',
       'modal.configure': 'Configure your subjects',
       'modal.welcomeDesc': 'Confirm your HKDSE subject combination. Chinese is optional for students taking Alternative Chinese (IGCSE/GCE AL/NCS).',
       'modal.configureDesc': 'Chinese is optional for alternative learners. Pick up to 3 electives.',
@@ -285,6 +292,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       'theme.toDark': 'Dark Mode',
       'lang.toggle': '中/EN',
       'drawer.completedDate': 'Completion Date',
+      'sidebar.clearAll': 'Clear all data',
+      'confirm.clearAll': 'Clear all DSETracker data in this browser? This cannot be undone.',
+'confirm.clearAllTitle': 'Clear all data?',
+'confirm.cancel': 'Cancel',
+'confirm.action': 'Clear data',
+
     },
     zh: {
       'app.subtitle': 'HKDSE 試卷追蹤與等級預估器',
@@ -347,7 +360,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       'toast.imported': '備份匯入成功',
       'toast.importFailed': '匯入失敗 — JSON 檔案無效',
       'toast.cutoffSaved': '分數線已更新',
-      'modal.welcome': '歡迎使用 DSETrack',
+      'modal.welcome': '歡迎使用 DSETracker',
       'modal.configure': '設定你的科目',
       'modal.welcomeDesc': '確認你的 HKDSE 科目組合。修讀非華語/替代中文課程 (IGCSE/GCE AL) 的學生可不安裝中國語文。',
       'modal.configureDesc': '中國語文科為選填。最多可選 3 個選修科目。',
@@ -385,6 +398,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       'theme.toDark': '深色模式',
       'lang.toggle': 'EN/中',
       'drawer.completedDate': '完成日期',
+      'sidebar.clearAll': '清除所有資料',
+      'confirm.clearAll': '確定要清除此瀏覽器中的所有 DSETracker 資料嗎？此操作無法復原。',
+'confirm.clearAllTitle': '清除所有資料？',
+'confirm.cancel': '取消',
+'confirm.action': '清除資料',
     }
   };
 
@@ -408,52 +426,55 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     return _lang === 'zh' ? (obj.name || '') : (obj.zh || '');
   }
 
-  function handleClearAll() {
-  var confirmed = window.confirm(
-    'Clear all DSETrack data in this browser? This cannot be undone.'
-  );
-  if (!confirmed) return;
-
-  localStorage.removeItem(STORAGE_KEY);
-  window.location.reload();
-}
-
   function getLocalDateStr() {
   var d = new Date();
   var offset = d.getTimezoneOffset() * 60000;
   return new Date(d.getTime() - offset).toISOString().slice(0, 10);
 }
+
+function isValidDateString(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  var date = new Date(value + 'T00:00:00Z');
+  return !isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
   /* ============================================================
      SCORE PARSER HELPER (HARDENED & CLAMPED)
      ============================================================ */
   function parsePaperScore(scoreStr, officialTotal) {
-    if (!scoreStr) return null;
-    var str = String(scoreStr).trim();
-    if (!str) return null;
+  if (scoreStr === null || scoreStr === undefined) return null;
+  var str = String(scoreStr).trim();
+  if (!str) return null;
 
-    if (str.indexOf('/') >= 0) {
-      var parts = str.split('/');
-      if (parts.length !== 2) return null;
-      var num = parseFloat(parts[0].trim()), den = parseFloat(parts[1].trim());
-      if (isNaN(num) || isNaN(den) || den <= 0 || num < 0) return null;
-      var rawPct = (num / den) * 100;
-      return { raw: num, total: den, pct: Math.min(100, Math.max(0, rawPct)) };
-    }
+  var numberPattern = '\\d+(?:\\.\\d+)?';
 
-    if (str.indexOf('%') >= 0) {
-      var pctVal = parseFloat(str.replace('%', '').trim());
-      if (isNaN(pctVal) || pctVal < 0) return null;
-      var clampedPct = Math.min(100, Math.max(0, pctVal));
-      var totalMark = officialTotal || 100;
-      return { raw: (clampedPct / 100) * totalMark, total: totalMark, pct: clampedPct };
-    }
+  if (str.indexOf('/') >= 0) {
+    if (!(new RegExp('^' + numberPattern + '\\s*\\/\\s*' + numberPattern + '$')).test(str)) return null;
+    var parts = str.split('/');
+    var num = Number(parts[0].trim());
+    var den = Number(parts[1].trim());
+    if (!isFinite(num) || !isFinite(den) || den <= 0) return null;
 
-    var rawVal = parseFloat(str);
-    if (isNaN(rawVal) || rawVal < 0) return null;
-    var maxMark = officialTotal && officialTotal > 0 ? officialTotal : 100;
-    var computedPct = Math.min(100, Math.max(0, (rawVal / maxMark) * 100));
-    return { raw: rawVal, total: maxMark, pct: computedPct };
+    var rawPct = (num / den) * 100;
+    return { raw: num, total: den, pct: Math.min(100, Math.max(0, rawPct)) };
   }
+
+  if (str.indexOf('%') >= 0) {
+    if (!(new RegExp('^' + numberPattern + '%$')).test(str)) return null;
+    var pctVal = Number(str.slice(0, -1).trim());
+    if (!isFinite(pctVal)) return null;
+    var clampedPct = Math.min(100, Math.max(0, pctVal));
+    var totalMark = officialTotal || 100;
+    return { raw: (clampedPct / 100) * totalMark, total: totalMark, pct: clampedPct };
+  }
+
+  if (!(new RegExp('^' + numberPattern + '$')).test(str)) return null;
+  var rawVal = Number(str);
+  if (!isFinite(rawVal)) return null;
+  var maxMark = officialTotal && officialTotal > 0 ? officialTotal : 100;
+  var computedPct = Math.min(100, Math.max(0, (rawVal / maxMark) * 100));
+  return { raw: rawVal, total: maxMark, pct: computedPct };
+}
 
   /* ============================================================
      DATA MODEL & HKDSE TIMETABLE
@@ -611,7 +632,50 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   };
 
   function ek(sid, row, pid) { return sid + '|' + row + '|' + pid; }
+  function sanitizeEntries(entries, bafsOption) {
+  if (!entries || typeof entries !== 'object' || Array.isArray(entries)) return {};
 
+  var safe = {};
+  Object.keys(entries).forEach(function (key) {
+    var parts = key.split('|');
+    if (parts.length !== 3) return;
+
+    var sid = parts[0], row = parts[1], pid = parts[2];
+    var subject = SUBJECTS[sid];
+    if (!subject || subject.rows.indexOf(row) < 0) return;
+
+    var validPaper = subject.papersFor(row, { bafsOption: bafsOption })
+      .some(function (paper) { return paper.id === pid; });
+    if (!validPaper) return;
+
+    var entry = entries[key];
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return;
+
+    var score = typeof entry.score === 'string' ? entry.score : '';
+    if (score && !parsePaperScore(score, subject.totalMarks ? subject.totalMarks[pid] : 100)) {
+      score = '';
+    }
+
+    var time = Number(entry.timeSpent);
+    if (!isFinite(time) || time < 0) time = 0;
+
+    var completedDate = isValidDateString(entry.completedDate)
+      ? entry.completedDate
+      : (entry.done ? getLocalDateStr() : '');
+
+    safe[key] = {
+      done: entry.done === true,
+      ungraded: entry.ungraded === true,
+      score: score,
+      notes: typeof entry.notes === 'string' ? entry.notes : '',
+      timeSpent: Math.floor(time),
+      completedDate: completedDate,
+      updatedAt: isFinite(Number(entry.updatedAt)) ? Number(entry.updatedAt) : Date.now()
+    };
+  });
+
+  return safe;
+}
   function subjectProgress(id, state) {
     var s = SUBJECTS[id]; if (!s) return { total: 0, done: 0, pct: 0 };
     var total = 0, done = 0;
@@ -699,20 +763,37 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
   /* ---------- SAFE CUTOFF MERGING HELPER ---------- */
   function mergeCutoffs(base, saved) {
-    var out = {};
-    Object.keys(base).forEach(function (k) { out[k] = Object.assign({}, base[k]); });
-    if (saved && typeof saved === 'object') {
-      Object.keys(saved).forEach(function (k) {
-        if (!SUBJECTS[k]) return;
-        if (!out[k]) out[k] = {};
-        Object.keys(saved[k] || {}).forEach(function (lvl) {
-          var v = saved[k][lvl];
-          out[k][lvl] = (v === '' || v === null || v === undefined) ? '' : Math.min(100, Math.max(0, parseFloat(v) || 0));
-        });
-      });
-    }
-    return out;
-  }
+  var out = {};
+  Object.keys(base).forEach(function (sid) {
+    out[sid] = Object.assign({}, base[sid]);
+  });
+
+  if (!saved || typeof saved !== 'object' || Array.isArray(saved)) return out;
+
+  var levels = ['5**', '5*', '5', '4', '3', '2', '1'];
+  Object.keys(saved).forEach(function (sid) {
+    if (!SUBJECTS[sid] || !out[sid] || !saved[sid] ||
+        typeof saved[sid] !== 'object' || Array.isArray(saved[sid])) return;
+
+    levels.forEach(function (level) {
+      if (!Object.prototype.hasOwnProperty.call(saved[sid], level)) return;
+
+      var value = saved[sid][level];
+      if (value === '' || value === null || value === undefined) {
+        out[sid][level] = '';
+        return;
+      }
+
+      var parsed = Number(value);
+      if (isFinite(parsed)) {
+        out[sid][level] = Math.min(100, Math.max(0, parsed));
+      }
+      // Ignore invalid values, preserving the default cutoff.
+    });
+  });
+
+  return out;
+}
 
   /* ---------- DEFAULT STATE ---------- */
   function defaultState() {
@@ -743,7 +824,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         electives: Array.isArray(data.electives) ? data.electives.filter(function (x) { return SUBJECTS[x] && !SUBJECTS[x].core; }).slice(0, 3) : b.electives,
         bafsOption: data.bafsOption === '2B' ? '2B' : '2A',
         active: data.active && SUBJECTS[data.active] ? data.active : 'eng',
-        entries: data.entries && typeof data.entries === 'object' ? data.entries : {},
+        entries: sanitizeEntries(data.entries, data.bafsOption),
         language: data.language === 'zh' ? 'zh' : 'en',
         theme: data.theme === 'light' ? 'light' : 'oled',
         sortMode: ['chrono','completion','score','time'].indexOf(data.sortMode) >= 0 ? data.sortMode : 'chrono',
@@ -797,7 +878,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: '#04140d', strokeWidth: 2.4, strokeLinecap: 'round', strokeLinejoin: 'round', className: 'h-5 w-5' },
               h('path', { d: 'M4 19V5a1 1 0 011-1h9l6 6v9a1 1 0 01-1 1H5a1 1 0 01-1-1z' }), h('path', { d: 'M8 13l3 3 5-6' }))),
           h('div', { className: 'min-w-0' },
-            h('div', { className: 'text-[15px] font-semibold tracking-tight leading-tight' }, 'DSETrack'),
+            h('div', { className: 'text-[15px] font-semibold tracking-tight leading-tight' }, 'DSETracker'),
             h('div', { className: 'text-[10px] uppercase tracking-[0.18em] text-zinc-500' }, t('app.subtitle'))),
           h('button', { onClick: props.onClose, className: 'ml-auto lg:hidden h-8 w-8 grid place-items-center rounded-lg text-zinc-500 hover:text-zinc-200 hover:bg-white/5', 'aria-label': 'Close menu' },
             h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, className: 'h-4 w-4' }, h('path', { d: 'M6 6l12 12M18 6L6 18' }))))),
@@ -832,7 +913,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     type: 'button',
     onClick: props.onClearAll,
     className: 'w-full rounded-lg border border-red-500/30 py-2 text-[11px] font-medium text-red-400 transition hover:bg-red-500/10'
-  }, 'Clear all data'),
+  }, t('sidebar.clearAll')),
   h('div', { className: 'grid grid-cols-2 gap-1.5' },
     h('button', { onClick: props.onExport, className: 'flex items-center justify-center gap-1.5 rounded-lg border border-line bg-[#0a0a0a] py-2 text-[11px] font-medium text-zinc-300 transition hover:border-zinc-600 hover:text-white' },
       h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', className: 'h-3.5 w-3.5' }, h('path', { d: 'M12 3v12M7 10l5 5 5-5M5 21h14' })), t('sidebar.export')),
@@ -949,7 +1030,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     }
 
     var primary = tName(subj);
-    var secondary = tOther(subj);
 
     return h('div', { className: 'flex flex-col min-h-full' },
       h('header', { className: 'sticky top-0 z-20 border-b border-line bg-black/85 backdrop-blur-xl' },
@@ -993,7 +1073,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             }),
             h('span', { className: 'h-3.5 w-[1px] bg-line/80 mx-0.5' }),
             h('select', { value: state.sortMode, onChange: function(e) { var val = e.target.value; props.setState(function(s){ var n = Object.assign({}, s); n.sortMode = val; return n; }); },
-              className: 'bg-transparent py-0.5 pr-1 font-medium text-zinc-300 outline-none cursor-pointer hover:text-white' },
+              className: 'sort-select bg-transparent py-0.5 pr-1 font-medium text-zinc-300 outline-none cursor-pointer hover:text-white' },
               h('option', { value: 'chrono', className: 'bg-[#0a0a0a] text-zinc-300' }, t('panel.sortChrono')),
               h('option', { value: 'completion', className: 'bg-[#0a0a0a] text-zinc-300' }, t('panel.sortCompletion')),
               h('option', { value: 'score', className: 'bg-[#0a0a0a] text-zinc-300' }, t('panel.sortScore')),
@@ -1035,7 +1115,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     var _sc = useState(entry && entry.score ? entry.score : ''); var score = _sc[0], setScore = _sc[1];
     var _nt = useState(entry && entry.notes ? entry.notes : ''); var notes = _nt[0], setNotes = _nt[1];
     var _tm = useState(entry && entry.timeSpent !== undefined && entry.timeSpent !== null ? entry.timeSpent : ''); var timeSpent = _tm[0], setTimeSpent = _tm[1];
-    var todayStr = new Date().toISOString().slice(0, 10);
 var _cd = useState(entry && entry.completedDate ? entry.completedDate : getLocalDateStr());
 var completedDate = _cd[0], setCompletedDate = _cd[1];
 
@@ -1056,22 +1135,37 @@ var completedDate = _cd[0], setCompletedDate = _cd[1];
       return function () { clearTimeout(timer); };
     }, []);
 
-    var handleSave = function () { 
-  var trimmedScore = String(score).trim();
-  var finalUngraded = ungraded || !trimmedScore;
-
-  onSave({ 
-    done: done, 
-    ungraded: finalUngraded, 
-    score: finalUngraded ? '' : trimmedScore, 
-    notes: String(notes).trim(), 
-    timeSpent: Math.max(0, parseInt(timeSpent, 10) || 0),
-    completedDate: completedDate
-  }); 
-};
-   
-
     var officialTotal = subject.totalMarks ? subject.totalMarks[paper.id] : 100;
+
+    var handleSave = function () {
+  var trimmedScore = String(score).trim();
+
+  if (trimmedScore && !parsePaperScore(trimmedScore, officialTotal)) {
+    alert('Enter a valid score, percentage, or score/total (for example: 45/50 or 78%).');
+    return;
+  }
+
+  var timeValue = String(timeSpent).trim() === '' ? 0 : Number(timeSpent);
+  var safeTimeSpent = isFinite(timeValue) && timeValue >= 0
+    ? Math.floor(timeValue)
+    : 0;
+
+  var safeCompletedDate = isValidDateString(completedDate)
+    ? completedDate
+    : getLocalDateStr();
+
+  var finalUngraded = !!ungraded && !!done;
+
+  onSave({
+    done: !!done,
+    ungraded: finalUngraded,
+    score: finalUngraded ? '' : trimmedScore,
+    notes: String(notes).trim(),
+    timeSpent: safeTimeSpent,
+    completedDate: safeCompletedDate
+  });
+};
+
     var parsedScore = parsePaperScore(score, officialTotal);
     var estimatedLevel = null;
 
@@ -1239,6 +1333,58 @@ h('div', { className: done ? '' : 'pointer-events-none opacity-40' },
             h('button', { onClick: function () { onSave({ core: coreSel, electives: electives, bafsOption: bafsOption }); }, className: 'rounded-lg bg-indigo-500 px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-indigo-400 active:scale-[0.98]' }, t(mode === 'onboarding' ? 'modal.enter' : 'modal.saveChanges'))))));
   }
 
+function ClearAllModal(props) {
+  useEffect(function () {
+    function handleKeyDown(e) {
+      if (e.key === 'Escape') props.onCancel();
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return function () {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [props.onCancel]);
+
+  return h('div', {
+    className: 'fixed inset-0 z-[120] grid place-items-center p-4'
+  },
+    h('div', {
+      className: 'absolute inset-0 bg-black/70 backdrop-blur-sm',
+      onClick: props.onCancel
+    }),
+    h('div', {
+      role: 'alertdialog',
+      'aria-modal': 'true',
+      'aria-labelledby': 'clear-all-title',
+      'aria-describedby': 'clear-all-description',
+      className: 'relative w-full max-w-sm rounded-2xl border border-line bg-[#0a0a0a] p-5 shadow-2xl'
+    },
+      h('h2', {
+        id: 'clear-all-title',
+        className: 'text-base font-semibold text-white'
+      }, t('confirm.clearAllTitle')),
+      h('p', {
+        id: 'clear-all-description',
+        className: 'mt-2 text-sm leading-relaxed text-zinc-400'
+      }, t('confirm.clearAll')),
+      h('div', {
+        className: 'mt-5 flex justify-end gap-2'
+      },
+        h('button', {
+          type: 'button',
+          onClick: props.onCancel,
+          className: 'rounded-lg border border-line px-3.5 py-2 text-[12px] font-medium text-zinc-300 transition hover:border-zinc-600 hover:text-white'
+        }, t('confirm.cancel')),
+        h('button', {
+          type: 'button',
+          onClick: props.onConfirm,
+          className: 'rounded-lg bg-red-500 px-3.5 py-2 text-[12px] font-semibold text-white transition hover:bg-red-400'
+        }, t('confirm.action'))
+      )
+    )
+  );
+}
+
   /* ============================================================
      CUTOFF ADJUSTMENT MODAL
      ============================================================ */
@@ -1254,7 +1400,14 @@ h('div', { className: done ? '' : 'pointer-events-none opacity-40' },
       setCutoffs(function(prev) {
         var n = JSON.parse(JSON.stringify(prev));
         if (!n[activeSub]) n[activeSub] = Object.assign({}, DEFAULT_CUTOFFS[activeSub]);
-        n[activeSub][lvl] = val === '' ? '' : (parseFloat(val) || 0);
+        if (val === '') {
+  n[activeSub][lvl] = '';
+} else {
+  var parsed = Number(val);
+  n[activeSub][lvl] = isFinite(parsed)
+    ? Math.min(100, Math.max(0, parsed))
+    : '';
+}
         return n;
       });
     };
@@ -1346,10 +1499,12 @@ h('div', { className: done ? '' : 'pointer-events-none opacity-40' },
      APP
      ============================================================ */
   function App() {
-    var _st = useState(loadState); var state = _st[0], setState = _st[1];
+    var _st = useState(loadState);
+    var state = _st[0], setState = _st[1];
     _lang = state.language;
 
-    var _ob = useState(function () { return !loadState().onboarded; }); var showOnboarding = _ob[0], setShowOnboarding = _ob[1];
+    var _ob = useState(!state.onboarded);
+    var showOnboarding = _ob[0], setShowOnboarding = _ob[1];
     var _set = useState(false); var showSettings = _set[0], setShowSettings = _set[1];
     var _cm = useState(false); var showCutoffModal = _cm[0], setShowCutoffModal = _cm[1];
     var _dr = useState(null); var drawer = _dr[0], setDrawer = _dr[1];
@@ -1357,6 +1512,8 @@ h('div', { className: done ? '' : 'pointer-events-none opacity-40' },
     var _tp = useState(null); var tip = _tp[0], setTip = _tp[1];
     var _ts = useState(null); var toast = _ts[0], setToast = _ts[1];
     var fileRef = useRef(null);
+    var _ca = useState(false);
+var showClearConfirm = _ca[0], setShowClearConfirm = _ca[1];
 
     useEffect(function () { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {} }, [state]);
     useEffect(function () { if (!toast) return; var t = setTimeout(function () { setToast(null); }, 2800); return function () { clearTimeout(t); }; }, [toast]);
@@ -1382,18 +1539,80 @@ h('div', { className: done ? '' : 'pointer-events-none opacity-40' },
     var setActive = useCallback(function (id) { setState(function (s) { var n = Object.assign({}, s); n.active = id; return n; }); setSidebarOpen(false); }, []);
 
     var toggleEntry = useCallback(function (sid, row, pid) {
-      setState(function (s) {
-        var k = ek(sid, row, pid); var cur = s.entries[k]; var next = Object.assign({}, s.entries);
-        if (cur && cur.done) { var cleared = Object.assign({}, cur, { done: false, updatedAt: Date.now() }); if (!cleared.notes && !cleared.score) delete next[k]; else next[k] = cleared; }
-        else { next[k] = { done: true, ungraded: cur ? !!cur.ungraded : true, score: cur && cur.score ? cur.score : '', notes: cur && cur.notes ? cur.notes : '', timeSpent: cur && cur.timeSpent !== undefined ? cur.timeSpent : 0, completedDate: cur && cur.completedDate ? cur.completedDate : getLocalDateStr(), updatedAt: Date.now() }; }
-        return Object.assign({}, s, { entries: next });
+  setState(function (s) {
+    var k = ek(sid, row, pid);
+    var cur = s.entries[k];
+    var next = Object.assign({}, s.entries);
+
+    if (cur && cur.done) {
+      var cleared = Object.assign({}, cur, {
+        done: false,
+        ungraded: false,
+        completedDate: '',
+        updatedAt: Date.now()
       });
-    }, []);
+
+      var hasData = !!cleared.notes || !!cleared.score ||
+        Number(cleared.timeSpent) > 0;
+
+      if (hasData) next[k] = cleared;
+      else delete next[k];
+    } else {
+      next[k] = {
+        done: true,
+        ungraded: cur ? !!cur.ungraded : true,
+        score: cur && cur.score ? cur.score : '',
+        notes: cur && cur.notes ? cur.notes : '',
+        timeSpent: cur && cur.timeSpent !== undefined ? cur.timeSpent : 0,
+        completedDate: cur && isValidDateString(cur.completedDate)
+          ? cur.completedDate
+          : getLocalDateStr(),
+        updatedAt: Date.now()
+      };
+    }
+
+    return Object.assign({}, s, { entries: next });
+  });
+}, []);
 
     var saveEntry = useCallback(function (sid, row, pid, data) {
-      setState(function (s) { var k = ek(sid, row, pid); var next = Object.assign({}, s.entries); if (!data.done && !data.notes && !data.score) delete next[k]; else next[k] = Object.assign({}, data, { updatedAt: Date.now() }); return Object.assign({}, s, { entries: next }); });
-      setDrawer(null); setToast(t('toast.saved'));
-    }, []);
+  setState(function (s) {
+    var k = ek(sid, row, pid);
+    var next = Object.assign({}, s.entries);
+
+    var timeSpent = Number(data.timeSpent);
+    var safeTimeSpent = isFinite(timeSpent) && timeSpent >= 0
+      ? Math.floor(timeSpent)
+      : 0;
+
+    var safeData = {
+      done: !!data.done,
+      ungraded: !!data.ungraded && !!data.done,
+      score: typeof data.score === 'string' ? data.score.trim() : '',
+      notes: typeof data.notes === 'string' ? data.notes.trim() : '',
+      timeSpent: safeTimeSpent,
+      completedDate: data.done
+        ? (isValidDateString(data.completedDate)
+            ? data.completedDate
+            : getLocalDateStr())
+        : ''
+    };
+
+    var hasMeaningfulData = safeData.done || !!safeData.score ||
+      !!safeData.notes || safeData.timeSpent > 0;
+
+    if (!hasMeaningfulData) {
+      delete next[k];
+    } else {
+      next[k] = Object.assign({}, safeData, { updatedAt: Date.now() });
+    }
+
+    return Object.assign({}, s, { entries: next });
+  });
+
+  setDrawer(null);
+  setToast(t('toast.saved'));
+}, []);
 
     var clearEntry = useCallback(function (sid, row, pid) { setState(function (s) { var next = Object.assign({}, s.entries); delete next[ek(sid, row, pid)]; return Object.assign({}, s, { entries: next }); }); setDrawer(null); setToast(t('toast.cleared')); }, []);
     var openDrawer = useCallback(function (sid, row, pid) { setDrawer({ sid: sid, row: row, pid: pid }); }, []);
@@ -1410,7 +1629,10 @@ h('div', { className: done ? '' : 'pointer-events-none opacity-40' },
       reader.onload = function () {
         try {
           var data = JSON.parse(String(reader.result));
-          if (!data || typeof data !== 'object' || typeof data.entries !== 'object') throw new Error('Invalid');
+          if (!data || typeof data !== 'object' || !data.entries ||
+    typeof data.entries !== 'object' || Array.isArray(data.entries)) {
+  throw new Error('Invalid');
+}
           var core = ['eng','math','csd'];
           if (Array.isArray(data.core) && data.core.length) { var filtered = data.core.filter(function (id) { return SUBJECTS[id] && SUBJECTS[id].core; }); if (filtered.length) core = filtered; }
           var electives = Array.isArray(data.electives) ? data.electives.filter(function (id) { return SUBJECTS[id] && !SUBJECTS[id].core; }).slice(0, 3) : [];
@@ -1420,7 +1642,7 @@ h('div', { className: done ? '' : 'pointer-events-none opacity-40' },
             electives: electives,
             bafsOption: data.bafsOption === '2B' ? '2B' : '2A',
             active: data.active && SUBJECTS[data.active] ? data.active : 'eng',
-            entries: data.entries || {},
+            entries: sanitizeEntries(data.entries, data.bafsOption),
             language: data.language === 'zh' ? 'zh' : 'en',
             theme: data.theme === 'light' ? 'light' : 'oled',
             sortMode: ['chrono','completion','score','time'].indexOf(data.sortMode) >= 0 ? data.sortMode : 'chrono',
@@ -1434,27 +1656,67 @@ h('div', { className: done ? '' : 'pointer-events-none opacity-40' },
     }, []);
 
     var handleSaveConfig = useCallback(function (cfg) {
+      if (!cfg || !Array.isArray(cfg.core) || !Array.isArray(cfg.electives)) return;
+      if (!cfg.core.length) return;
       setState(function (s) {
         var combined = cfg.core.concat(cfg.electives);
         var active = combined.indexOf(s.active) >= 0 ? s.active : (cfg.electives[0] || cfg.core[0] || 'eng');
         return Object.assign({}, s, { onboarded: true, core: cfg.core, electives: cfg.electives, bafsOption: cfg.bafsOption, active: active });
       });
-      setShowSettings(false); setShowOnboarding(false);
+      
+      setShowSettings(false); 
+      setShowOnboarding(false);
     }, []);
 
-    var handleSaveCutoffs = useCallback(function(newCutoffs) {
-      var cleaned = {};
-      Object.keys(newCutoffs || {}).forEach(function(sid) {
-        cleaned[sid] = {};
-        Object.keys(newCutoffs[sid] || {}).forEach(function(lvl) {
-          var v = newCutoffs[sid][lvl];
-          cleaned[sid][lvl] = (v === '' || v === null || v === undefined) ? '' : Math.min(100, Math.max(0, parseFloat(v) || 0));
-        });
-      });
-      setState(function(s) { return Object.assign({}, s, { customCutoffs: cleaned }); });
-      setShowCutoffModal(false); setToast(t('toast.cutoffSaved'));
-    }, []);
+    var handleSaveCutoffs = useCallback(function (newCutoffs) {
+  var cleaned = {};
+  var invalid = false;
+  var levels = ['5**', '5*', '5', '4', '3', '2', '1'];
 
+  Object.keys(newCutoffs || {}).forEach(function (sid) {
+    if (!SUBJECTS[sid]) return;
+    cleaned[sid] = {};
+
+    levels.forEach(function (level) {
+      var value = newCutoffs[sid] && newCutoffs[sid][level];
+
+      if (value === '' || value === null || value === undefined) {
+        cleaned[sid][level] = '';
+        return;
+      }
+
+      var parsed = Number(value);
+      if (!isFinite(parsed)) {
+        invalid = true;
+        return;
+      }
+
+      cleaned[sid][level] = Math.min(100, Math.max(0, parsed));
+    });
+  });
+
+  if (invalid) {
+    alert('Cut-off thresholds must be valid numbers from 0 to 100, or blank.');
+    return;
+  }
+
+  setState(function (s) {
+    return Object.assign({}, s, { customCutoffs: cleaned });
+  });
+  setShowCutoffModal(false);
+  setToast(t('toast.cutoffSaved'));
+}, []);
+    
+    var clearAllModalEl = showClearConfirm
+  ? h(ClearAllModal, {
+      onCancel: function () { setShowClearConfirm(false); },
+      onConfirm: function () {
+        try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+        window.location.reload();
+      }
+    })
+  : null;
+    
     var toggleLanguage = useCallback(function () { setState(function (s) { var n = Object.assign({}, s); n.language = s.language === 'en' ? 'zh' : 'en'; return n; }); }, []);
     var toggleTheme = useCallback(function () {
   if (document.startViewTransition) {
@@ -1484,20 +1746,20 @@ h('div', { className: done ? '' : 'pointer-events-none opacity-40' },
     var modalEl = (showOnboarding || showSettings) ? h(SubjectModal, { state: state, mode: showOnboarding ? 'onboarding' : 'settings', onClose: function () { setShowSettings(false); }, onSave: handleSaveConfig }) : null;
     var cutoffModalEl = showCutoffModal ? h(CutoffModal, { state: state, onClose: function() { setShowCutoffModal(false); }, onSave: handleSaveCutoffs }) : null;
 
-    var tipEl = tip ? h('div', { className: 'pointer-events-none fixed z-[100] max-w-[240px] -translate-x-1/2 rounded-md border border-line bg-[#1a1a1a] px-2 py-1 text-[10px] font-medium leading-snug text-zinc-200 shadow-xl', style: { left: tip.x, top: Math.max(8, tip.y - 34) } }, tip.text) : null;
+    var tipEl = tip ? h('div', { className: 'dse-tooltip pointer-events-none fixed z-[100] max-w-[240px] -translate-x-1/2 rounded-md border border-line bg-[#1a1a1a] px-2 py-1 text-[10px] font-medium leading-snug text-zinc-200 shadow-xl', style: { left: tip.x, top: Math.max(8, tip.y - 34) } }, tip.text) : null;
     var toastEl = toast ? h('div', { className: 'fixed bottom-5 left-1/2 z-[110] -translate-x-1/2 anim-toast' }, h('div', { className: 'flex items-center gap-2 rounded-xl border border-line bg-[#141414] px-4 py-2.5 text-[12px] font-medium text-zinc-100 shadow-2xl' }, h('span', { className: 'grid h-4 w-4 place-items-center rounded-full bg-emerald-500 text-[#04140d]' }, h(CheckIcon, { className: 'h-2.5 w-2.5' })), toast)) : null;
     var sidebarBackdrop = sidebarOpen ? h('div', { className: 'fixed inset-0 z-30 bg-black/60 backdrop-blur-sm lg:hidden', onClick: function () { setSidebarOpen(false); } }) : null;
 
     return h('div', { className: 'flex h-screen overflow-hidden bg-black font-sans text-zinc-200' },
       sidebarBackdrop,
       h('div', { className: cls('fixed inset-y-0 left-0 z-40 transition-transform duration-300 lg:static lg:translate-x-0', sidebarOpen ? 'translate-x-0' : '-translate-x-full') },
-        h(Sidebar, { state: state, activeIds: activeIds, overall: overall, setActive: setActive, onSettings: function () { setShowSettings(true); setSidebarOpen(false); }, onOpenCutoffs: function() { setShowCutoffModal(true); setSidebarOpen(false); }, onExport: handleExport, onImport: function () { if (fileRef.current) fileRef.current.click(); }, onClearAll: handleClearAll, onClose: function () { setSidebarOpen(false); }, toggleLanguage: toggleLanguage, toggleTheme: toggleTheme })),
+        h(Sidebar, { state: state, activeIds: activeIds, overall: overall, setActive: setActive, onSettings: function () { setShowSettings(true); setSidebarOpen(false); }, onOpenCutoffs: function() { setShowCutoffModal(true); setSidebarOpen(false); }, onExport: handleExport, onImport: function () { if (fileRef.current) fileRef.current.click(); }, onClearAll: function () { setShowClearConfirm(true); }, onClose: function () { setSidebarOpen(false); }, toggleLanguage: toggleLanguage, toggleTheme: toggleTheme })),
       h('main', { className: 'flex min-w-0 flex-1 flex-col overflow-hidden' },
         h('div', { className: 'flex items-center gap-3 border-b border-line bg-black px-4 py-3 lg:hidden' },
           h('button', { onClick: function () { setSidebarOpen(true); }, className: 'grid h-9 w-9 place-items-center rounded-lg border border-line text-zinc-400 transition hover:text-white', 'aria-label': 'Open menu' },
             h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', className: 'h-4 w-4' }, h('path', { d: 'M4 6h16M4 12h16M4 18h16' }))),
           h('div', { className: 'flex-1 min-w-0' },
-            h('div', { className: 'text-[13px] font-semibold tracking-tight' }, 'DSETrack'),
+            h('div', { className: 'text-[13px] font-semibold tracking-tight' }, 'DSETracker'),
             h('div', { className: 'text-[10px] uppercase tracking-[0.16em] text-zinc-600' }, t('mobile.complete', { n: overall.pct }))),
           h('div', { className: 'flex items-center gap-2' },
             h('div', { className: 'grid h-9 w-9 place-items-center rounded-lg border border-line text-[11px] font-semibold text-emerald-400' }, overall.pct),
@@ -1506,7 +1768,7 @@ h('div', { className: done ? '' : 'pointer-events-none opacity-40' },
           h(StatCards, { state: state }),
           h(SubjectPanel, { state: state, setState: setState, activeId: state.active, tipProps: tipProps, openDrawer: openDrawer, toggleEntry: toggleEntry }))),
       h('input', { ref: fileRef, type: 'file', accept: 'application/json,.json', className: 'hidden', onChange: handleImportFile }),
-      drawerEl, modalEl, cutoffModalEl, tipEl, toastEl);
+      drawerEl, modalEl, cutoffModalEl, clearAllModalEl, tipEl, toastEl);
   }
 
   var rootEl = document.getElementById('root');
