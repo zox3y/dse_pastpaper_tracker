@@ -55,6 +55,16 @@
   animation-duration: 0.4s;
   animation-timing-function: ease-in-out;
 }
+
+@media screen and (max-width: 768px) {
+  input[type="text"],
+  input[type="number"],
+  input[type="date"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
   /* ---------- LIGHT MODE ---------- */
   body.theme-light { --ring-track: #e4e4e7; background: #f4f4f5; color: #18181b; }
   body.theme-light .bg-black,
