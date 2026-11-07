@@ -4,7 +4,7 @@ HKDSE past paper tracker and grade estimator.
 
 ## Features
 
-* **Syllabus Coverage:** Core subjects (Chinese, English, Mathematics, CSD) and electives (M1, M2, Physics, Chemistry, Biology, Economics, BAFS, Geography, History, Chinese History, ICT).
+* **Syllabus Coverage:** Core DSE subjects (Chinese, English, Mathematics, CSD) and electives (M1, M2, Physics, Chemistry, Biology, Economics, BAFS, Geography, History, Chinese History, ICT, etc).
 * **Paper Matrix:** Track past papers from 2012 to 2027, including Sample Papers (SP) and Practice Papers (PP).
 * **Grade Estimator:** Automated weighted score calculations with customizable cut-off thresholds ($5^{**}$ to $1$).
 * **Time & Note Logging:** Record actual practice time, compare against official time limits, and save reflections.
