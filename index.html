@@ -294,10 +294,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       'drawer.completedDate': 'Completion Date',
       'sidebar.clearAll': 'Clear all data',
       'confirm.clearAll': 'Clear all DSETracker data in this browser? This cannot be undone.',
-'confirm.clearAllTitle': 'Clear all data?',
-'confirm.cancel': 'Cancel',
-'confirm.action': 'Clear data',
-
+      'confirm.clearAllTitle': 'Clear all data?',
+      'confirm.cancel': 'Cancel',
+      'confirm.action': 'Clear data',
     },
     zh: {
       'app.subtitle': 'HKDSE 試卷追蹤與等級預估器',
@@ -400,9 +399,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       'drawer.completedDate': '完成日期',
       'sidebar.clearAll': '清除所有資料',
       'confirm.clearAll': '確定要清除此瀏覽器中的所有 DSETracker 資料嗎？此操作無法復原。',
-'confirm.clearAllTitle': '清除所有資料？',
-'confirm.cancel': '取消',
-'confirm.action': '清除資料',
+      'confirm.clearAllTitle': '清除所有資料？',
+      'confirm.cancel': '取消',
+      'confirm.action': '清除資料',
     }
   };
 
@@ -460,8 +459,8 @@ function isValidDateString(value) {
   }
 
   if (str.indexOf('%') >= 0) {
-    if (!(new RegExp('^' + numberPattern + '%$')).test(str)) return null;
-    var pctVal = Number(str.slice(0, -1).trim());
+    if (!(new RegExp('^' + numberPattern + '\\s*%$')).test(str)) return null;
+    var pctVal = Number(str.replace('%', '').trim());
     if (!isFinite(pctVal)) return null;
     var clampedPct = Math.min(100, Math.max(0, pctVal));
     var totalMark = officialTotal || 100;
@@ -484,7 +483,7 @@ function isValidDateString(value) {
   var ALL_ROWS = EXAM_YEARS.concat(['SP', 'PP']);
   var CSD_ROWS = ['2026', '2025', '2024', 'SP', 'PP']; // CSD official past paper timeline
   var CORE_IDS = ['chi', 'eng', 'math', 'csd'];
-  var ELECTIVE_IDS = ['m1','m2','phy','chem','bio','econ','bafs','geo','hist','chiHist','ict'];
+  var ELECTIVE_IDS = ['m1','m2','phy','chem','bio','econ','bafs','geo','hist','chiHist','ict','chiLit','litEng','ers','ths','dat','hmsc','techLiv','music','va','pe'];
 
   var DEFAULT_CUTOFFS = {
     chi: { '5**': 70, '5*': 65, '5': 62, '4': 56, '3': 48, '2': 41, '1': 30 },
@@ -501,7 +500,17 @@ function isValidDateString(value) {
     geo: { '5**': 83, '5*': 76, '5': 68, '4': 58, '3': 49, '2': 40, '1': 28 },
     hist: { '5**': 80, '5*': 73, '5': 65, '4': 55, '3': 46, '2': 37, '1': 25 },
     chiHist: { '5**': 82, '5*': 75, '5': 67, '4': 57, '3': 48, '2': 39, '1': 27 },
-    ict: { '5**': 85, '5*': 78, '5': 70, '4': 60, '3': 51, '2': 42, '1': 30 }
+    ict: { '5**': 85, '5*': 78, '5': 70, '4': 60, '3': 51, '2': 42, '1': 30 },
+    chiLit: { '5**': 82, '5*': 75, '5': 67, '4': 57, '3': 48, '2': 39, '1': 27 },
+    litEng: { '5**': 85, '5*': 80, '5': 73, '4': 62, '3': 48, '2': 38, '1': 28 },
+    ers: { '5**': 82, '5*': 75, '5': 67, '4': 57, '3': 48, '2': 39, '1': 27 },
+    ths: { '5**': 83, '5*': 76, '5': 68, '4': 58, '3': 49, '2': 40, '1': 28 },
+    dat: { '5**': 83, '5*': 76, '5': 68, '4': 58, '3': 49, '2': 40, '1': 28 },
+    hmsc: { '5**': 84, '5*': 77, '5': 69, '4': 59, '3': 50, '2': 41, '1': 29 },
+    techLiv: { '5**': 83, '5*': 76, '5': 68, '4': 58, '3': 49, '2': 40, '1': 28 },
+    music: { '5**': 85, '5*': 78, '5': 70, '4': 60, '3': 51, '2': 42, '1': 30 },
+    va: { '5**': 84, '5*': 77, '5': 69, '4': 59, '3': 50, '2': 41, '1': 29 },
+    pe: { '5**': 83, '5*': 76, '5': 68, '4': 58, '3': 49, '2': 40, '1': 28 }
   };
 
   var EXAM_DATES = {
@@ -519,7 +528,17 @@ function isValidDateString(value) {
     geo: '2027-04-16',
     hist: '2027-04-27',
     chiHist: '2027-04-24',
-    ict: '2027-04-17'
+    ict: '2027-04-17',
+    music: '2027-04-06',
+    va: '2027-04-06',
+    techLiv: '2027-04-07',
+    hmsc: '2027-04-14',
+    dat: '2027-04-20',
+    litEng: '2027-04-20',
+    ths: '2027-04-28',
+    chiLit: '2027-04-29',
+    ers: '2027-04-30',
+    pe: '2027-05-03',
   };
 
   function twoPapers(enA, enB, zhA, zhB, timeA, timeB) {
@@ -628,6 +647,66 @@ function isValidDateString(value) {
       id: 'ict', core: false, name: 'Information & Communication Technology', zh: '資訊及通訊科技', abbr: 'ICT', rows: ALL_ROWS,
       papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective Part', '卷一 — 必修部分', '卷二 — 選修部分', 120, 90),
       weighting: { p1: 55, p2: 25 }, totalMarks: { p1: 80, p2: 40 }
+    },
+    chiLit: {
+      id: 'chiLit', core: false, name: 'Chinese Literature', zh: '中國文學', abbr: 'C.LIT', rows: ALL_ROWS,
+      papersFor: twoPapers('Paper 1 — Literary Creation', 'Paper 2 — Literary Appreciation', '卷一 — 文學創作', '卷二 — 文學賞析', 120, 120),
+      weighting: { p1: 25, p2: 60 }, totalMarks: { p1: 100, p2: 100 }
+    },
+    litEng: {
+      id: 'litEng', core: false, name: 'Literature in English', zh: '英語文學', abbr: 'LIT.ENG', rows: ALL_ROWS,
+      papersFor: twoPapers('Paper 1 — Essay Writing', 'Paper 2 — Appreciation', '卷一 — 論文寫作', '卷二 — 文學賞析', 180, 120),
+      weighting: { p1: 50, p2: 30 }, totalMarks: { p1: 100, p2: 100 }
+    },
+    ers: {
+      id: 'ers', core: false, name: 'Ethics & Religious Studies', zh: '倫理與宗教', abbr: 'ERS', rows: ALL_ROWS,
+      papersFor: twoPapers('Paper 1 — Ethics', 'Paper 2 — Religious Traditions', '卷一 — 倫理學', '卷二 — 宗教傳統', 105, 105),
+      weighting: { p1: 50, p2: 50 }, totalMarks: { p1: 60, p2: 60 }
+    },
+    ths: {
+      id: 'ths', core: false, name: 'Tourism & Hospitality Studies', zh: '旅遊與款待', abbr: 'THS', rows: ALL_ROWS,
+      papersFor: twoPapers('Paper 1 — Multiple Choice & Data-Response', 'Paper 2 — Essay Questions', '卷一 — 多項選擇及資料回應題', '卷二 — 論述題', 90, 105),
+      weighting: { p1: 50, p2: 50 }, totalMarks: { p1: 50, p2: 40 }
+    },
+    dat: {
+      id: 'dat', core: false, name: 'Design & Applied Technology', zh: '設計與應用科技', abbr: 'DAT', rows: ALL_ROWS,
+      papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective Part', '卷一 — 必修部分', '卷二 — 選修部分', 120, 120),
+      weighting: { p1: 30, p2: 40 }, totalMarks: { p1: 70, p2: 80 }
+    },
+    hmsc: {
+      id: 'hmsc', core: false, name: 'Health Management & Social Care', zh: '健康管理與社會關懷', abbr: 'HMSC', rows: ALL_ROWS,
+      papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective & Compulsory Part', '卷一 — 必修部分', '卷二 — 選修及必修部分', 120, 105),
+      weighting: { p1: 46, p2: 34 }, totalMarks: { p1: 80, p2: 70 }
+    },
+    techLiv: {
+      id: 'techLiv', core: false, name: 'Technology & Living', zh: '科技與生活', abbr: 'T&L', rows: ALL_ROWS,
+      papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective Part', '卷一 — 必修部分', '卷二 — 選修部分', 90, 120),
+      weighting: { p1: 30, p2: 40 }, totalMarks: { p1: 70, p2: 80 }
+    },
+    music: {
+      id: 'music', core: false, name: 'Music', zh: '音樂', abbr: 'MUS', rows: ALL_ROWS,
+      papersFor: function () { return [
+        { id: 'p1a', short: 'P1A', name: 'Paper 1A — Listening (Western Classical)', zh: '卷一A — 聆聽（西洋古典音樂）', officialTime: 105 },
+        { id: 'p1b', short: 'P1B', name: 'Paper 1B — Listening (Chinese & Pop)', zh: '卷一B — 聆聽（中國音樂與流行音樂）', officialTime: 105 }
+      ]; },
+      weighting: { p1a: 20, p1b: 20 }, totalMarks: { p1a: 50, p1b: 50 }
+    },
+    va: {
+      id: 'va', core: false, name: 'Visual Arts', zh: '視覺藝術', abbr: 'VA', rows: ALL_ROWS,
+      papersFor: function (row, state) {
+        var opt = state && state.vaOption;
+        return [
+          opt === 'p2'
+            ? { id: 'p2', short: 'P2', name: 'Paper 2 — Design', zh: '卷二 — 設計', officialTime: 240 }
+            : { id: 'p1', short: 'P1', name: 'Paper 1 — Visual Presentation of a Theme', zh: '卷一 — 針對主題的視覺表達', officialTime: 240 }
+        ];
+      },
+      weighting: { p1: 100, p2: 100 }, totalMarks: { p1: 100, p2: 100 }
+    },
+    pe: {
+      id: 'pe', core: false, name: 'Physical Education', zh: '體育', abbr: 'PE', rows: ALL_ROWS,
+      papersFor: twoPapers('Paper 1 — Theory Paper 1', 'Paper 2 — Theory Paper 2', '卷一 — 理論試卷一', '卷二 — 理論試卷二', 120, 90),
+      weighting: { p1: 40, p2: 20 }, totalMarks: { p1: 83, p2: 42 }
     }
   };
 
@@ -644,8 +723,11 @@ function isValidDateString(value) {
     var subject = SUBJECTS[sid];
     if (!subject || subject.rows.indexOf(row) < 0) return;
 
-    var validPaper = subject.papersFor(row, { bafsOption: bafsOption })
-      .some(function (paper) { return paper.id === pid; });
+    var validPaper = (sid === 'bafs')
+      ? (pid === 'p1' || pid === 'p2a' || pid === 'p2b')
+      : (sid === 'va')
+      ? (pid === 'p1' || pid === 'p2')
+      : subject.papersFor(row, { bafsOption: bafsOption }).some(function (paper) { return paper.id === pid; });
     if (!validPaper) return;
 
     var entry = entries[key];
@@ -698,14 +780,18 @@ function isValidDateString(value) {
       if (!subCutoffs) continue;
       var defaultSet = (typeof DEFAULT_CUTOFFS !== 'undefined' && DEFAULT_CUTOFFS[sid]) || DEFAULT_CUTOFFS.math;
       var effective = Object.assign({}, defaultSet, subCutoffs);
-      for (var i = 0; i < levels.length - 1; i++) {
-        var high = parseFloat(effective[levels[i]]);
-        var low = parseFloat(effective[levels[i + 1]]);
-        if (isNaN(high) || isNaN(low)) continue;
-        if (high < low) {
+      
+      var activeLevels = [];
+      for (var l = 0; l < levels.length; l++) {
+        var val = parseFloat(effective[levels[l]]);
+        if (!isNaN(val)) activeLevels.push({ lvl: levels[l], val: val });
+      }
+
+      for (var i = 0; i < activeLevels.length - 1; i++) {
+        if (activeLevels[i].val < activeLevels[i + 1].val) {
           var subjObj = (typeof SUBJECTS !== 'undefined' && SUBJECTS[sid]);
           var subjName = subjObj ? (subjObj.abbr || subjObj.name) : sid;
-          return subjName + ' — ' + levels[i] + ' (' + high + '%) cannot be lower than ' + levels[i + 1] + ' (' + low + '%).';
+          return subjName + ' — ' + activeLevels[i].lvl + ' (' + activeLevels[i].val + '%) cannot be lower than ' + activeLevels[i + 1].lvl + ' (' + activeLevels[i + 1].val + '%).';
         }
       }
     }
@@ -802,6 +888,7 @@ function isValidDateString(value) {
       core: ['eng', 'math', 'csd'],
       electives: ['m2', 'phy'],
       bafsOption: '2A',
+      vaOption: 'p1',
       active: 'eng',
       entries: {},
       language: 'en',
@@ -823,6 +910,7 @@ function isValidDateString(value) {
         core: Array.isArray(data.core) ? data.core.filter(function (x) { return SUBJECTS[x] && SUBJECTS[x].core; }) : b.core,
         electives: Array.isArray(data.electives) ? data.electives.filter(function (x) { return SUBJECTS[x] && !SUBJECTS[x].core; }).slice(0, 3) : b.electives,
         bafsOption: data.bafsOption === '2B' ? '2B' : '2A',
+        vaOption: data.vaOption === 'p2' ? 'p2' : 'p1',
         active: data.active && SUBJECTS[data.active] ? data.active : 'eng',
         entries: sanitizeEntries(data.entries, data.bafsOption),
         language: data.language === 'zh' ? 'zh' : 'en',
@@ -1052,6 +1140,11 @@ function isValidDateString(value) {
               return h('button', { key: o, onClick: function () { props.setState(function (s) { var n = Object.assign({}, s); n.bafsOption = o; return n; }); },
                 className: cls('rounded-md px-3 py-1.5 text-[11px] font-medium transition-all', state.bafsOption === o ? 'bg-indigo-500 text-white shadow shadow-indigo-500/30' : 'text-zinc-400 hover:text-zinc-200') },
                 t(o === '2A' ? 'bafs.p2a' : 'bafs.p2b'));
+            })) : activeId === 'va' ? h('div', { className: 'mt-2.5 inline-flex items-center gap-1 rounded-lg border border-line bg-[#0a0a0a] p-1' },
+            ['p1', 'p2'].map(function (o) {
+              return h('button', { key: o, onClick: function () { props.setState(function (s) { var n = Object.assign({}, s); n.vaOption = o; return n; }); },
+                className: cls('rounded-md px-3 py-1.5 text-[11px] font-medium transition-all', (state.vaOption || 'p1') === o ? 'bg-indigo-500 text-white shadow shadow-indigo-500/30' : 'text-zinc-400 hover:text-zinc-200') },
+                o === 'p1' ? 'Paper 1 (Visual Presentation)' : 'Paper 2 (Design)');
             })) : null)),
       h('div', { className: 'px-3 sm:px-6 lg:px-8 py-5' },
         h('div', { className: 'mb-3 flex flex-wrap items-center justify-between gap-2' },
@@ -1641,6 +1734,7 @@ var showClearConfirm = _ca[0], setShowClearConfirm = _ca[1];
             core: core,
             electives: electives,
             bafsOption: data.bafsOption === '2B' ? '2B' : '2A',
+            vaOption: data.vaOption === 'p2' ? 'p2' : 'p1',
             active: data.active && SUBJECTS[data.active] ? data.active : 'eng',
             entries: sanitizeEntries(data.entries, data.bafsOption),
             language: data.language === 'zh' ? 'zh' : 'en',
