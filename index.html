@@ -297,6 +297,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       'confirm.clearAllTitle': 'Clear all data?',
       'confirm.cancel': 'Cancel',
       'confirm.action': 'Clear data',
+'va.p1': 'Paper 1 — Visual Presentation',
+'va.p2': 'Paper 2 — Design',
     },
     zh: {
       'app.subtitle': 'HKDSE 試卷追蹤與等級預估器',
@@ -402,6 +404,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       'confirm.clearAllTitle': '清除所有資料？',
       'confirm.cancel': '取消',
       'confirm.action': '清除資料',
+'va.p1': '卷一  針對主題的視覺表達',
+'va.p2': '卷二  設計',
     }
   };
 
@@ -452,7 +456,7 @@ function isValidDateString(value) {
     var parts = str.split('/');
     var num = Number(parts[0].trim());
     var den = Number(parts[1].trim());
-    if (!isFinite(num) || !isFinite(den) || den <= 0) return null;
+    if (!isFinite(num) || !isFinite(den) || den <= 0 || num < 0) return null;
 
     var rawPct = (num / den) * 100;
     return { raw: num, total: den, pct: Math.min(100, Math.max(0, rawPct)) };
@@ -461,7 +465,7 @@ function isValidDateString(value) {
   if (str.indexOf('%') >= 0) {
     if (!(new RegExp('^' + numberPattern + '\\s*%$')).test(str)) return null;
     var pctVal = Number(str.replace('%', '').trim());
-    if (!isFinite(pctVal)) return null;
+    if (!isFinite(pctVal) || pctVal < 0) return null;
     var clampedPct = Math.min(100, Math.max(0, pctVal));
     var totalMark = officialTotal || 100;
     return { raw: (clampedPct / 100) * totalMark, total: totalMark, pct: clampedPct };
@@ -469,10 +473,11 @@ function isValidDateString(value) {
 
   if (!(new RegExp('^' + numberPattern + '$')).test(str)) return null;
   var rawVal = Number(str);
-  if (!isFinite(rawVal)) return null;
+  if (!isFinite(rawVal) || rawVal < 0) return null;
   var maxMark = officialTotal && officialTotal > 0 ? officialTotal : 100;
-  var computedPct = Math.min(100, Math.max(0, (rawVal / maxMark) * 100));
-  return { raw: rawVal, total: maxMark, pct: computedPct };
+  if (rawVal > maxMark) return null;
+  var computedPct = (rawVal / maxMark) * 100;
+  return { raw: rawVal, total: maxMark, pct: Math.min(100, Math.max(0, computedPct)) };
 }
 
   /* ============================================================
@@ -483,8 +488,7 @@ function isValidDateString(value) {
   var ALL_ROWS = EXAM_YEARS.concat(['SP', 'PP']);
   var CSD_ROWS = ['2026', '2025', '2024', 'SP', 'PP']; // CSD official past paper timeline
   var CORE_IDS = ['chi', 'eng', 'math', 'csd'];
-  var ELECTIVE_IDS = ['phy','chem','bio','bafs','econ','hist','chiHist','ict','geo','va','m1','m2','chiLit','litEng','ers','ths','dat','hmsc','techLiv','music','pe'];
-
+var ELECTIVE_IDS = ['phy','chem','bio','bafs','econ','hist','chiHist','ict','geo','va','m1','m2','chiLit','litEng','ers','ths','dat','hmsc','techLiv','music','pe'];
   var DEFAULT_CUTOFFS = {
     chi: { '5**': 70, '5*': 65, '5': 62, '4': 56, '3': 48, '2': 41, '1': 30 },
     eng: { '5**': 84, '5*': 79, '5': 72, '4': 61, '3': 47, '2': 38, '1': 28 },
@@ -552,8 +556,8 @@ function isValidDateString(value) {
     chi: {
       id: 'chi', core: true, name: 'Chinese Language', zh: '中國語文', abbr: 'CHI', rows: ALL_ROWS,
       papersFor: function () { return [
-        { id: 'p1', short: 'P1', name: 'Paper 1 — Reading (閱讀能力)', zh: '卷一 — 閱讀能力', officialTime: 90 },
-        { id: 'p2', short: 'P2', name: 'Paper 2 — Writing (寫作能力)', zh: '卷二 — 寫作能力', officialTime: 135 }
+        { id: 'p1', short: 'P1', name: 'Paper 1 — Reading (閱讀能力)', zh: '卷一   閱讀能力', officialTime: 90 },
+        { id: 'p2', short: 'P2', name: 'Paper 2 — Writing (寫作能力)', zh: '卷二   寫作能力', officialTime: 135 }
       ]; },
       note: 'Paper 3 (Listening) and Paper 4 (Speaking) excluded — phased out under optimised curriculum.',
       noteZh: '卷三（聆聽）及卷四（說話）已排除 — 精簡課程下已取消。',
@@ -562,18 +566,18 @@ function isValidDateString(value) {
     eng: {
       id: 'eng', core: true, name: 'English Language', zh: '英國語文', abbr: 'ENG', rows: ALL_ROWS,
       papersFor: function () { return [
-        { id: 'p1', short: 'P1', name: 'Paper 1 — Reading', zh: '卷一 — 閱讀', officialTime: 90 },
-        { id: 'p2', short: 'P2', name: 'Paper 2 — Writing', zh: '卷二 — 寫作', officialTime: 120 },
-        { id: 'p3', short: 'P3', name: 'Paper 3 — Listening & Integrated Skills', zh: '卷三 — 聆聽及綜合能力', officialTime: 120 },
-        { id: 'p4', short: 'P4', name: 'Paper 4 — Speaking', zh: '卷四 — 說話能力', officialTime: 15 }
+        { id: 'p1', short: 'P1', name: 'Paper 1 — Reading', zh: '卷一   閱讀', officialTime: 90 },
+        { id: 'p2', short: 'P2', name: 'Paper 2 — Writing', zh: '卷二   寫作', officialTime: 120 },
+        { id: 'p3', short: 'P3', name: 'Paper 3 — Listening & Integrated Skills', zh: '卷三   聆聽及綜合能力', officialTime: 120 },
+        { id: 'p4', short: 'P4', name: 'Paper 4 — Speaking', zh: '卷四   說話能力', officialTime: 15 }
       ]; },
       weighting: { p1: 20, p2: 25, p3: 30, p4: 25 }, totalMarks: { p1: 129, p2: 178, p3: 181, p4: 179 }
     },
     math: {
       id: 'math', core: true, name: 'Mathematics (Compulsory Part)', zh: '數學（必修部分）', abbr: 'MATH', rows: ALL_ROWS,
       papersFor: function () { return [
-        { id: 'p1', short: 'P1', name: 'Paper 1 — Conventional Questions', zh: '卷一 — 傳統題', officialTime: 135 },
-        { id: 'p2', short: 'P2', name: 'Paper 2 — Multiple Choice', zh: '卷二 — 多項選擇題', officialTime: 75 }
+        { id: 'p1', short: 'P1', name: 'Paper 1 — Conventional Questions', zh: '卷一   傳統題', officialTime: 135 },
+        { id: 'p2', short: 'P2', name: 'Paper 2 — Multiple Choice', zh: '卷二   多項選擇題', officialTime: 75 }
       ]; },
       weighting: { p1: 65, p2: 35 }, totalMarks: { p1: 105, p2: 45 }
     },
@@ -597,22 +601,22 @@ function isValidDateString(value) {
     },
     phy: {
       id: 'phy', core: false, name: 'Physics', zh: '物理', abbr: 'PHY', rows: ALL_ROWS,
-      papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective Part', '卷一 — 必修部分', '卷二 — 選修部分', 150, 60),
+      papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective Part', '卷一   必修部分', '卷二   選修部分', 150, 60),
       weighting: { p1: 60, p2: 20 }, totalMarks: { p1: 117, p2: 36 }
     },
     chem: {
       id: 'chem', core: false, name: 'Chemistry', zh: '化學', abbr: 'CHEM', rows: ALL_ROWS,
-      papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective Part', '卷一 — 必修部分', '卷二 — 選修部分', 150, 60),
+      papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective Part', '卷一   必修部分', '卷二   選修部分', 150, 60),
       weighting: { p1: 60, p2: 20 }, totalMarks: { p1: 122, p2: 40 }
     },
     bio: {
       id: 'bio', core: false, name: 'Biology', zh: '生物', abbr: 'BIO', rows: ALL_ROWS,
-      papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective Part', '卷一 — 必修部分', '卷二 — 選修部分', 150, 60),
+      papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective Part', '卷一   必修部分', '卷二   選修部分', 150, 60),
       weighting: { p1: 60, p2: 20 }, totalMarks: { p1: 120, p2: 40 }
     },
     econ: {
       id: 'econ', core: false, name: 'Economics', zh: '經濟', abbr: 'ECON', rows: ALL_ROWS,
-      papersFor: twoPapers('Paper 1 — Multiple Choice', 'Paper 2 — Conventional', '卷一 — 多項選擇題', '卷二 — 傳統題', 60, 135),
+      papersFor: twoPapers('Paper 1 — Multiple Choice', 'Paper 2 — Conventional', '卷一   多項選擇題', '卷二   傳統題', 60, 135),
       weighting: { p1: 30, p2: 70 }, totalMarks: { p1: 45, p2: 120 }
     },
     bafs: {
@@ -620,7 +624,7 @@ function isValidDateString(value) {
       papersFor: function (row, state) {
         var opt = state && state.bafsOption;
         return [
-          { id: 'p1', short: 'P1', name: 'Paper 1 — Compulsory Part', zh: '卷一 — 必修部分', officialTime: 75 },
+          { id: 'p1', short: 'P1', name: 'Paper 1 — Compulsory Part', zh: '卷一   必修部分', officialTime: 75 },
           opt === '2B'
             ? { id: 'p2b', short: 'P2B', name: 'Paper 2B — Business Management Module', zh: '卷二B — 商業管理單元', officialTime: 135 }
             : { id: 'p2a', short: 'P2A', name: 'Paper 2A — Accounting Module', zh: '卷二A — 會計單元', officialTime: 135 }
@@ -630,57 +634,57 @@ function isValidDateString(value) {
     },
     geo: {
       id: 'geo', core: false, name: 'Geography', zh: '地理', abbr: 'GEO', rows: ALL_ROWS,
-      papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective Part', '卷一 — 必修部分', '卷二 — 選修部分', 150, 75),
+      papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective Part', '卷一   必修部分', '卷二   選修部分', 150, 75),
       weighting: { p1: 75, p2: 25 }, totalMarks: { p1: 86, p2: 40 }
     },
     hist: {
       id: 'hist', core: false, name: 'History', zh: '歷史', abbr: 'HIST', rows: ALL_ROWS,
-      papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective Part', '卷一 — 必修部分', '卷二 — 選修部分', 105, 90),
+      papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective Part', '卷一   必修部分', '卷二   選修部分', 105, 90),
       weighting: { p1: 60, p2: 40 }, totalMarks: { p1: 60, p2: 40 }
     },
     chiHist: {
       id: 'chiHist', core: false, name: 'Chinese History', zh: '中國歷史', abbr: 'C.HIST', rows: ALL_ROWS,
-      papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective Part', '卷一 — 必修部分', '卷二 — 選修部分', 135, 80),
+      papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective Part', '卷一   必修部分', '卷二   選修部分', 135, 80),
       weighting: { p1: 70, p2: 30 }, totalMarks: { p1: 90, p2: 50 }
     },
     ict: {
       id: 'ict', core: false, name: 'Information & Communication Technology', zh: '資訊及通訊科技', abbr: 'ICT', rows: ALL_ROWS,
-      papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective Part', '卷一 — 必修部分', '卷二 — 選修部分', 120, 90),
+      papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective Part', '卷一   必修部分', '卷二   選修部分', 120, 90),
       weighting: { p1: 55, p2: 25 }, totalMarks: { p1: 80, p2: 40 }
     },
     chiLit: {
       id: 'chiLit', core: false, name: 'Chinese Literature', zh: '中國文學', abbr: 'C.LIT', rows: ALL_ROWS,
-      papersFor: twoPapers('Paper 1 — Literary Creation', 'Paper 2 — Literary Appreciation', '卷一 — 文學創作', '卷二 — 文學賞析', 120, 120),
+      papersFor: twoPapers('Paper 1 — Literary Creation', 'Paper 2 — Literary Appreciation', '卷一   文學創作', '卷二   文學賞析', 120, 120),
       weighting: { p1: 25, p2: 60 }, totalMarks: { p1: 100, p2: 100 }
     },
     litEng: {
       id: 'litEng', core: false, name: 'Literature in English', zh: '英語文學', abbr: 'LIT.ENG', rows: ALL_ROWS,
-      papersFor: twoPapers('Paper 1 — Essay Writing', 'Paper 2 — Appreciation', '卷一 — 論文寫作', '卷二 — 文學賞析', 180, 120),
+      papersFor: twoPapers('Paper 1 — Essay Writing', 'Paper 2 — Appreciation', '卷一   論文寫作', '卷二   文學賞析', 180, 120),
       weighting: { p1: 50, p2: 30 }, totalMarks: { p1: 100, p2: 100 }
     },
     ers: {
       id: 'ers', core: false, name: 'Ethics & Religious Studies', zh: '倫理與宗教', abbr: 'ERS', rows: ALL_ROWS,
-      papersFor: twoPapers('Paper 1 — Ethics', 'Paper 2 — Religious Traditions', '卷一 — 倫理學', '卷二 — 宗教傳統', 105, 105),
+      papersFor: twoPapers('Paper 1 — Ethics', 'Paper 2 — Religious Traditions', '卷一   倫理學', '卷二   宗教傳統', 105, 105),
       weighting: { p1: 50, p2: 50 }, totalMarks: { p1: 60, p2: 60 }
     },
     ths: {
       id: 'ths', core: false, name: 'Tourism & Hospitality Studies', zh: '旅遊與款待', abbr: 'THS', rows: ALL_ROWS,
-      papersFor: twoPapers('Paper 1 — Multiple Choice & Data-Response', 'Paper 2 — Essay Questions', '卷一 — 多項選擇及資料回應題', '卷二 — 論述題', 90, 105),
+      papersFor: twoPapers('Paper 1 — Multiple Choice & Data-Response', 'Paper 2 — Essay Questions', '卷一   多項選擇及資料回應題', '卷二   論述題', 90, 105),
       weighting: { p1: 50, p2: 50 }, totalMarks: { p1: 50, p2: 40 }
     },
     dat: {
       id: 'dat', core: false, name: 'Design & Applied Technology', zh: '設計與應用科技', abbr: 'DAT', rows: ALL_ROWS,
-      papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective Part', '卷一 — 必修部分', '卷二 — 選修部分', 120, 120),
+      papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective Part', '卷一   必修部分', '卷二   選修部分', 120, 120),
       weighting: { p1: 30, p2: 40 }, totalMarks: { p1: 70, p2: 80 }
     },
     hmsc: {
       id: 'hmsc', core: false, name: 'Health Management & Social Care', zh: '健康管理與社會關懷', abbr: 'HMSC', rows: ALL_ROWS,
-      papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective & Compulsory Part', '卷一 — 必修部分', '卷二 — 選修及必修部分', 120, 105),
+      papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective & Compulsory Part', '卷一   必修部分', '卷二   選修及必修部分', 120, 105),
       weighting: { p1: 46, p2: 34 }, totalMarks: { p1: 80, p2: 70 }
     },
     techLiv: {
       id: 'techLiv', core: false, name: 'Technology & Living', zh: '科技與生活', abbr: 'T&L', rows: ALL_ROWS,
-      papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective Part', '卷一 — 必修部分', '卷二 — 選修部分', 90, 120),
+      papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective Part', '卷一   必修部分', '卷二   選修部分', 90, 120),
       weighting: { p1: 30, p2: 40 }, totalMarks: { p1: 70, p2: 80 }
     },
     music: {
@@ -697,15 +701,15 @@ function isValidDateString(value) {
         var opt = state && state.vaOption;
         return [
           opt === 'p2'
-            ? { id: 'p2', short: 'P2', name: 'Paper 2 — Design', zh: '卷二 — 設計', officialTime: 240 }
-            : { id: 'p1', short: 'P1', name: 'Paper 1 — Visual Presentation of a Theme', zh: '卷一 — 針對主題的視覺表達', officialTime: 240 }
+            ? { id: 'p2', short: 'P2', name: 'Paper 2 — Design', zh: '卷二   設計', officialTime: 240 }
+            : { id: 'p1', short: 'P1', name: 'Paper 1 — Visual Presentation of a Theme', zh: '卷一   針對主題的視覺表達', officialTime: 240 }
         ];
       },
       weighting: { p1: 100, p2: 100 }, totalMarks: { p1: 100, p2: 100 }
     },
     pe: {
       id: 'pe', core: false, name: 'Physical Education', zh: '體育', abbr: 'PE', rows: ALL_ROWS,
-      papersFor: twoPapers('Paper 1 — Theory Paper 1', 'Paper 2 — Theory Paper 2', '卷一 — 理論試卷一', '卷二 — 理論試卷二', 120, 90),
+      papersFor: twoPapers('Paper 1 — Theory Paper 1', 'Paper 2 — Theory Paper 2', '卷一   理論試卷一', '卷二   理論試卷二', 120, 90),
       weighting: { p1: 40, p2: 20 }, totalMarks: { p1: 83, p2: 42 }
     }
   };
@@ -772,31 +776,37 @@ function isValidDateString(value) {
   }
 
   function validateAllCutoffs(cutoffs) {
-    var levels = ['5**', '5*', '5', '4', '3', '2', '1'];
-    var sids = Object.keys(cutoffs || {});
-    for (var s = 0; s < sids.length; s++) {
-      var sid = sids[s];
-      var subCutoffs = cutoffs[sid];
-      if (!subCutoffs) continue;
-      var defaultSet = (typeof DEFAULT_CUTOFFS !== 'undefined' && DEFAULT_CUTOFFS[sid]) || DEFAULT_CUTOFFS.math;
-      var effective = Object.assign({}, defaultSet, subCutoffs);
-      
-      var activeLevels = [];
-      for (var l = 0; l < levels.length; l++) {
-        var val = parseFloat(effective[levels[l]]);
-        if (!isNaN(val)) activeLevels.push({ lvl: levels[l], val: val });
+  var levels = ['5**', '5*', '5', '4', '3', '2', '1'];
+  var sids = Object.keys(cutoffs || {});
+  for (var s = 0; s < sids.length; s++) {
+    var sid = sids[s];
+    var subCutoffs = cutoffs[sid];
+    if (!subCutoffs) continue;
+    var defaultSet = (typeof DEFAULT_CUTOFFS !== 'undefined' && DEFAULT_CUTOFFS[sid]) || DEFAULT_CUTOFFS.math;
+    var effective = Object.assign({}, defaultSet, subCutoffs);
+    
+    var activeLevels = [];
+    for (var l = 0; l < levels.length; l++) {
+      var rawVal = effective[levels[l]];
+      if (rawVal === '' || rawVal === null || rawVal === undefined) continue;
+      var val = parseFloat(rawVal);
+      if (isNaN(val) || val < 0 || val > 100) {
+        var subjObj = (typeof SUBJECTS !== 'undefined' && SUBJECTS[sid]);
+        return (subjObj ? subjObj.abbr : sid) + ' — ' + levels[l] + ' must be a percentage between 0 and 100.';
       }
+      activeLevels.push({ lvl: levels[l], val: val });
+    }
 
-      for (var i = 0; i < activeLevels.length - 1; i++) {
-        if (activeLevels[i].val < activeLevels[i + 1].val) {
-          var subjObj = (typeof SUBJECTS !== 'undefined' && SUBJECTS[sid]);
-          var subjName = subjObj ? (subjObj.abbr || subjObj.name) : sid;
-          return subjName + ' — ' + activeLevels[i].lvl + ' (' + activeLevels[i].val + '%) cannot be lower than ' + activeLevels[i + 1].lvl + ' (' + activeLevels[i + 1].val + '%).';
-        }
+    for (var i = 0; i < activeLevels.length - 1; i++) {
+      if (activeLevels[i].val <= activeLevels[i + 1].val) {
+        var subj = (typeof SUBJECTS !== 'undefined' && SUBJECTS[sid]);
+        var subjName = subj ? (subj.abbr || subj.name) : sid;
+        return subjName + ' — Threshold for ' + activeLevels[i].lvl + ' (' + activeLevels[i].val + '%) must be strictly higher than ' + activeLevels[i + 1].lvl + ' (' + activeLevels[i + 1].val + '%).';
       }
     }
-    return null;
   }
+  return null;
+}
 
   /* Calculate Normalized Subject Percentage & Projected Grade */
   function calculateSubjectPerformance(id, state) {
@@ -1026,36 +1036,54 @@ function isValidDateString(value) {
      CHIP
      ============================================================ */
   function Chip(props) {
-    var paper = props.paper, entry = props.entry, onOpen = props.onOpen, onToggle = props.onToggle, tipProps = props.tipProps;
-    var done = !!(entry && entry.done);
-    var graded = done && !entry.ungraded && !!entry.score;
-    var attempted = done && !graded;
-    var status = !done ? '' : (graded ? entry.score : t('chip.attempted'));
-    var hasTime = entry && entry.timeSpent !== undefined && entry.timeSpent !== null && entry.timeSpent !== '' && entry.timeSpent > 0;
-    return h('div', Object.assign({
-      role: 'button', tabIndex: 0, onClick: onOpen, onKeyDown: function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(); } },
-      className: cls('group relative flex items-center gap-2 rounded-lg border px-2 py-2 sm:px-3 sm:py-2.5 cursor-pointer outline-none transition-all duration-150 focus-visible:ring-2 focus-visible:ring-indigo-500/60',
-        graded ? 'border-emerald-500/50 bg-emerald-500/[0.12] hover:bg-emerald-500/[0.18]' : attempted ? 'border-dashed border-emerald-500/30 bg-emerald-500/[0.06] hover:bg-emerald-500/[0.11]' : 'border-line bg-[#0a0a0a] hover:border-zinc-600 hover:bg-[#141414]')
-    }, tipProps(tName(paper) + (status ? ' · ' + status : ''))),
-      h('button', Object.assign({ type: 'button', 'aria-label': done ? t('chip.markNotAttempted') : t('chip.quickMark'), onClick: function (e) { e.stopPropagation(); onToggle(); },
-        className: cls('grid place-items-center h-6 w-6 shrink-0 rounded-md border transition-all duration-150', done ? 'bg-emerald-500 border-emerald-500 text-[#07130e]' : 'border-zinc-600 group-hover:border-zinc-400 bg-transparent') }, tipProps(done ? t('chip.markNotAttempted') : t('chip.quickMark'))),
-        done ? h(CheckIcon, { className: 'h-3.5 w-3.5' }) : null),
-      h('div', { className: 'min-w-0 flex-1' },
-        h('div', { className: cls('text-[11px] font-semibold truncate leading-tight', done ? 'text-emerald-300' : 'text-zinc-300') }, paper.short),
-        status ? h('div', { className: cls('text-[10px] truncate leading-tight mt-0.5', graded ? 'text-emerald-400/90' : 'text-emerald-500/70') }, status) : null),
-      hasTime ? h('span', { className: 'text-[9px] font-mono text-zinc-500 shrink-0 hidden sm:inline' }, entry.timeSpent + 'm') : null,
-      entry && entry.notes ? h('span', { className: 'hidden sm:block h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400', title: 'Has notes' }) : null);
-  }
+  var paper = props.paper, entry = props.entry, onOpen = props.onOpen, onToggle = props.onToggle, tipProps = props.tipProps;
+  var done = !!(entry && entry.done);
+  var graded = done && !entry.ungraded && !!entry.score;
+  var attempted = done && !graded;
+  var status = !done ? '' : (graded ? entry.score : t('chip.attempted'));
+  var hasTime = entry && entry.timeSpent !== undefined && entry.timeSpent !== null && entry.timeSpent > 0;
+
+  return h('div', Object.assign({
+    onClick: onOpen,
+    role: 'button',
+    tabIndex: 0,
+    onKeyDown: function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(); } },
+    className: cls('group relative flex items-center gap-2 rounded-lg border px-2 py-2 sm:px-3 sm:py-2.5 cursor-pointer outline-none transition-all duration-150 focus-visible:ring-2 focus-visible:ring-indigo-500/60',
+      graded ? 'border-emerald-500/50 bg-emerald-500/[0.12] hover:bg-emerald-500/[0.18]' : attempted ? 'border-dashed border-emerald-500/30 bg-emerald-500/[0.06] hover:bg-emerald-500/[0.11]' : 'border-line bg-[#0a0a0a] hover:border-zinc-600 hover:bg-[#141414]')
+  }, tipProps(tName(paper) + (status ? ' · ' + status : ''))),
+    h('button', {
+      type: 'button',
+      'aria-label': done ? t('chip.markNotAttempted') : t('chip.quickMark'),
+      onClick: function (e) { e.stopPropagation(); onToggle(); },
+      className: cls(
+        'relative grid place-items-center h-6 w-6 shrink-0 rounded-md border transition-all duration-150 focus-visible:ring-2 focus-visible:ring-indigo-500/60',
+        done ? 'bg-emerald-500 border-emerald-500 text-[#07130e]' : 'border-zinc-600 group-hover:border-zinc-400 bg-transparent'
+      )
+    }, done ? h(CheckIcon, { className: 'h-3.5 w-3.5' }) : null),
+    h('div', { className: 'min-w-0 flex-1 text-left' },
+      h('div', { className: cls('text-[11px] font-semibold truncate leading-tight', done ? 'text-emerald-300' : 'text-zinc-300') }, paper.short),
+      status ? h('div', { className: cls('text-[10px] truncate leading-tight mt-0.5', graded ? 'text-emerald-400/90' : 'text-emerald-500/70') }, status) : null
+    ),
+    hasTime ? h('span', { className: 'text-[9px] font-mono text-zinc-500 shrink-0 hidden sm:inline' }, entry.timeSpent + 'm') : null,
+    entry && entry.notes ? h('span', { className: 'hidden sm:block h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400', title: 'Has notes' }) : null
+  );
+}
 
   /* ============================================================
      SUBJECT PANEL
      ============================================================ */
   function SubjectPanel(props) {
-    var state = props.state, activeId = props.activeId, subj = SUBJECTS[activeId], prog = subjectProgress(activeId, state);
+  var state = props.state, activeId = props.activeId;
+  var subj = SUBJECTS[activeId] || SUBJECTS['eng'];
+  var safeActiveId = SUBJECTS[activeId] ? activeId : 'eng';
+  var prog = subjectProgress(safeActiveId, state);
 
-    var papersByRow = useMemo(function () {
-      var map = {}; subj.rows.forEach(function (r) { map[r] = subj.papersFor(r, state); }); return map;
-    }, [activeId, state.bafsOption, state.entries]);
+  var papersByRow = useMemo(function () {
+    var map = {}; 
+    if (!subj || !subj.rows) return map;
+    subj.rows.forEach(function (r) { map[r] = subj.papersFor(r, state); }); 
+    return map;
+  }, [safeActiveId, state.bafsOption, state.vaOption, state.entries]);
 
     var maxCols = 1; subj.rows.forEach(function (r) { if (papersByRow[r].length > maxCols) maxCols = papersByRow[r].length; });
 
@@ -1141,11 +1169,19 @@ function isValidDateString(value) {
                 className: cls('rounded-md px-3 py-1.5 text-[11px] font-medium transition-all', state.bafsOption === o ? 'bg-indigo-500 text-white shadow shadow-indigo-500/30' : 'text-zinc-400 hover:text-zinc-200') },
                 t(o === '2A' ? 'bafs.p2a' : 'bafs.p2b'));
             })) : activeId === 'va' ? h('div', { className: 'mt-2.5 inline-flex items-center gap-1 rounded-lg border border-line bg-[#0a0a0a] p-1' },
-            ['p1', 'p2'].map(function (o) {
-              return h('button', { key: o, onClick: function () { props.setState(function (s) { var n = Object.assign({}, s); n.vaOption = o; return n; }); },
-                className: cls('rounded-md px-3 py-1.5 text-[11px] font-medium transition-all', (state.vaOption || 'p1') === o ? 'bg-indigo-500 text-white shadow shadow-indigo-500/30' : 'text-zinc-400 hover:text-zinc-200') },
-                o === 'p1' ? 'Paper 1 (Visual Presentation)' : 'Paper 2 (Design)');
-            })) : null)),
+  ['p1', 'p2'].map(function (o) {
+    return h('button', {
+      key: o,
+      onClick: function () {
+        props.setState(function (s) {
+          var n = Object.assign({}, s);
+          n.vaOption = o;
+          return n;
+        });
+      },
+      className: cls('rounded-md px-3 py-1.5 text-[11px] font-medium transition-all', (state.vaOption || 'p1') === o ? 'bg-indigo-500 text-white shadow shadow-indigo-500/30' : 'text-zinc-400 hover:text-zinc-200')
+    }, t(o === 'p1' ? 'va.p1' : 'va.p2'));
+  })) : null)),
       h('div', { className: 'px-3 sm:px-6 lg:px-8 py-5' },
         h('div', { className: 'mb-3 flex flex-wrap items-center justify-between gap-2' },
           h('div', { className: 'flex flex-wrap items-center gap-1.5' },
@@ -1357,6 +1393,15 @@ h('div', { className: done ? '' : 'pointer-events-none opacity-40' },
     var _bo = useState(state.bafsOption); var bafsOption = _bo[0], setBafsOption = _bo[1];
     var _w = useState(''); var warn = _w[0], setWarn = _w[1];
     var _core = useState(state.core.slice()); var coreSel = _core[0], setCoreSel = _core[1];
+    
+    useEffect(function () {
+    if (mode === 'onboarding') return;
+    function handleKeyDown(e) {
+      if (e.key === 'Escape') onClose();
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return function () { window.removeEventListener('keydown', handleKeyDown); };
+  }, [mode, onClose]);
 
     var toggleCore = function (id) {
       setCoreSel(function (prev) {
@@ -1405,12 +1450,17 @@ h('div', { className: done ? '' : 'pointer-events-none opacity-40' },
       h('div', { className: 'inline-flex items-center gap-1 rounded-lg border border-line bg-black p-1' },
         ['2A', '2B'].map(function (o) { return h('button', { key: o, type: 'button', onClick: function () { setBafsOption(o); }, className: cls('rounded-md px-3 py-1.5 text-[11px] font-medium transition', bafsOption === o ? 'bg-indigo-500 text-white' : 'text-zinc-400 hover:text-zinc-200') }, t(o === '2A' ? 'modal.bafs2A' : 'modal.bafs2B')); }))) : null;
 
-    return h('div', { className: 'fixed inset-0 z-50 overflow-y-auto' },
-      h('div', { className: 'absolute inset-0 bg-black/70 backdrop-blur-sm anim-fade', onClick: mode === 'onboarding' ? undefined : onClose }),
-      h('div', { className: 'relative mx-auto my-6 w-[calc(100%-1.5rem)] max-w-2xl' },
-        h('div', { className: 'anim-pop overflow-hidden rounded-2xl border border-line bg-black shadow-2xl' },
-          h('div', { className: 'border-b border-line px-6 py-5' },
-            h('h2', { className: 'text-lg font-semibold tracking-tight text-white' }, t(mode === 'onboarding' ? 'modal.welcome' : 'modal.configure')),
+    return h('div', {
+    className: 'fixed inset-0 z-50 overflow-y-auto',
+    role: 'dialog',
+    'aria-modal': 'true',
+    'aria-labelledby': 'modal-title'
+  },
+    h('div', { className: 'absolute inset-0 bg-black/70 backdrop-blur-sm anim-fade', onClick: mode === 'onboarding' ? undefined : onClose }),
+    h('div', { className: 'relative mx-auto my-6 w-[calc(100%-1.5rem)] max-w-2xl' },
+      h('div', { className: 'anim-pop overflow-hidden rounded-2xl border border-line bg-black shadow-2xl' },
+        h('div', { className: 'border-b border-line px-6 py-5' },
+          h('h2', { id: 'modal-title', className: 'text-lg font-semibold tracking-tight text-white' }, t(mode === 'onboarding' ? 'modal.welcome' : 'modal.configure')),
             h('p', { className: 'mt-1 text-[12px] text-zinc-500' }, t(mode === 'onboarding' ? 'modal.welcomeDesc' : 'modal.configureDesc'))),
           h('div', { className: 'max-h-[62vh] space-y-6 overflow-y-auto px-6 py-5' },
             h('section', null,
@@ -1427,24 +1477,19 @@ h('div', { className: done ? '' : 'pointer-events-none opacity-40' },
   }
 
 function ClearAllModal(props) {
+  var onCancel = props.onCancel;
   useEffect(function () {
     function handleKeyDown(e) {
-      if (e.key === 'Escape') props.onCancel();
+      if (e.key === 'Escape') onCancel();
     }
-
     window.addEventListener('keydown', handleKeyDown);
     return function () {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [props.onCancel]);
+  }, [onCancel]);
 
-  return h('div', {
-    className: 'fixed inset-0 z-[120] grid place-items-center p-4'
-  },
-    h('div', {
-      className: 'absolute inset-0 bg-black/70 backdrop-blur-sm',
-      onClick: props.onCancel
-    }),
+  return h('div', { className: 'fixed inset-0 z-[120] grid place-items-center p-4' },
+    h('div', { className: 'absolute inset-0 bg-black/70 backdrop-blur-sm', onClick: onCancel }),
     h('div', {
       role: 'alertdialog',
       'aria-modal': 'true',
@@ -1452,32 +1497,15 @@ function ClearAllModal(props) {
       'aria-describedby': 'clear-all-description',
       className: 'relative w-full max-w-sm rounded-2xl border border-line bg-[#0a0a0a] p-5 shadow-2xl'
     },
-      h('h2', {
-        id: 'clear-all-title',
-        className: 'text-base font-semibold text-white'
-      }, t('confirm.clearAllTitle')),
-      h('p', {
-        id: 'clear-all-description',
-        className: 'mt-2 text-sm leading-relaxed text-zinc-400'
-      }, t('confirm.clearAll')),
-      h('div', {
-        className: 'mt-5 flex justify-end gap-2'
-      },
-        h('button', {
-          type: 'button',
-          onClick: props.onCancel,
-          className: 'rounded-lg border border-line px-3.5 py-2 text-[12px] font-medium text-zinc-300 transition hover:border-zinc-600 hover:text-white'
-        }, t('confirm.cancel')),
-        h('button', {
-          type: 'button',
-          onClick: props.onConfirm,
-          className: 'rounded-lg bg-red-500 px-3.5 py-2 text-[12px] font-semibold text-white transition hover:bg-red-400'
-        }, t('confirm.action'))
+      h('h2', { id: 'clear-all-title', className: 'text-base font-semibold text-white' }, t('confirm.clearAllTitle')),
+      h('p', { id: 'clear-all-description', className: 'mt-2 text-sm leading-relaxed text-zinc-400' }, t('confirm.clearAll')),
+      h('div', { className: 'mt-5 flex justify-end gap-2' },
+        h('button', { type: 'button', onClick: onCancel, className: 'rounded-lg border border-line px-3.5 py-2 text-[12px] font-medium text-zinc-300 transition hover:border-zinc-600 hover:text-white' }, t('confirm.cancel')),
+        h('button', { type: 'button', onClick: props.onConfirm, className: 'rounded-lg bg-red-500 px-3.5 py-2 text-[12px] font-semibold text-white transition hover:bg-red-400' }, t('confirm.action'))
       )
     )
   );
 }
-
   /* ============================================================
      CUTOFF ADJUSTMENT MODAL
      ============================================================ */
@@ -1559,10 +1587,10 @@ function ClearAllModal(props) {
      STAT CARDS & EXAM TIMETABLE
      ============================================================ */
   function StatCards(props) {
-    var state = props.state;
-    var activeSubj = SUBJECTS[state.active];
-
-    var examDateStr = EXAM_DATES[state.active] || '2027-04-08';
+  var state = props.state;
+  var safeActiveId = SUBJECTS[state.active] ? state.active : 'eng';
+  var activeSubj = SUBJECTS[safeActiveId];
+  var examDateStr = EXAM_DATES[safeActiveId] || '2027-04-08';
     var target = new Date(examDateStr + 'T09:00:00');
     var diff = target - new Date();
     var rawDays = Math.ceil(diff / (1000 * 60 * 60 * 24));
@@ -1624,10 +1652,22 @@ var showClearConfirm = _ca[0], setShowClearConfirm = _ca[1];
       activeIds.forEach(function (id) { var p = subjectProgress(id, state); total += p.total; done += p.done; });
       return { total: total, done: done, pct: total ? Math.round((done / total) * 100) : 0 };
     }, [activeIds, state]);
+    
+    var handleCancelClearAll = useCallback(function () {
+  setShowClearConfirm(false);
+}, []);
 
     var tipProps = useCallback(function (text) {
-      return { onMouseEnter: function (e) { setTip({ text: text, x: e.clientX, y: e.clientY }); }, onMouseMove: function (e) { setTip(function (tp) { return tp ? Object.assign({}, tp, { x: e.clientX, y: e.clientY }) : null; }); }, onMouseLeave: function () { setTip(null); } };
-    }, []);
+  return {
+    onMouseEnter: function (e) {
+      var rect = e.currentTarget.getBoundingClientRect();
+      setTip({ text: text, x: rect.left + rect.width / 2, y: rect.top });
+    },
+    onMouseLeave: function () {
+      setTip(null);
+    }
+  };
+}, []);
 
     var setActive = useCallback(function (id) { setState(function (s) { var n = Object.assign({}, s); n.active = id; return n; }); setSidebarOpen(false); }, []);
 
@@ -1717,37 +1757,54 @@ var showClearConfirm = _ca[0], setShowClearConfirm = _ca[1];
     }, [state]);
 
     var handleImportFile = useCallback(function (e) {
-      var file = e.target.files && e.target.files[0]; if (!file) return;
-      var reader = new FileReader();
-      reader.onload = function () {
-        try {
-          var data = JSON.parse(String(reader.result));
-          if (!data || typeof data !== 'object' || !data.entries ||
-    typeof data.entries !== 'object' || Array.isArray(data.entries)) {
-  throw new Error('Invalid');
-}
-          var core = ['eng','math','csd'];
-          if (Array.isArray(data.core) && data.core.length) { var filtered = data.core.filter(function (id) { return SUBJECTS[id] && SUBJECTS[id].core; }); if (filtered.length) core = filtered; }
-          var electives = Array.isArray(data.electives) ? data.electives.filter(function (id) { return SUBJECTS[id] && !SUBJECTS[id].core; }).slice(0, 3) : [];
-          setState(Object.assign({}, loadState(), {
-            onboarded: true,
-            core: core,
-            electives: electives,
-            bafsOption: data.bafsOption === '2B' ? '2B' : '2A',
-            vaOption: data.vaOption === 'p2' ? 'p2' : 'p1',
-            active: data.active && SUBJECTS[data.active] ? data.active : 'eng',
-            entries: sanitizeEntries(data.entries, data.bafsOption),
-            language: data.language === 'zh' ? 'zh' : 'en',
-            theme: data.theme === 'light' ? 'light' : 'oled',
-            sortMode: ['chrono','completion','score','time'].indexOf(data.sortMode) >= 0 ? data.sortMode : 'chrono',
-            filterMode: ['all','done','pending'].indexOf(data.filterMode) >= 0 ? data.filterMode : 'all',
-            customCutoffs: mergeCutoffs(DEFAULT_CUTOFFS, data.customCutoffs)
-          }));
-          setShowOnboarding(false); setToast(t('toast.imported'));
-        } catch (err) { setToast(t('toast.importFailed')); }
-      };
-      reader.readAsText(file); e.target.value = '';
-    }, []);
+  var file = e.target.files && e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function () {
+    try {
+      var data = JSON.parse(String(reader.result));
+      if (!data || typeof data !== 'object' || !data.entries || typeof data.entries !== 'object' || Array.isArray(data.entries)) {
+        throw new Error('Invalid schema format');
+      }
+      var core = ['eng', 'math', 'csd'];
+      if (Array.isArray(data.core) && data.core.length) {
+        var filteredCore = data.core.filter(function (id) { return SUBJECTS[id] && SUBJECTS[id].core; });
+        if (filteredCore.length) core = filteredCore;
+      }
+      var electives = Array.isArray(data.electives)
+        ? data.electives.filter(function (id) { return SUBJECTS[id] && !SUBJECTS[id].core; }).slice(0, 3)
+        : [];
+
+      var validActiveIds = core.concat(electives);
+      var targetActive = (data.active && validActiveIds.indexOf(data.active) >= 0)
+        ? data.active
+        : (validActiveIds[0] || 'eng');
+
+      var bafsOpt = data.bafsOption === '2B' ? '2B' : '2A';
+
+      setState(Object.assign({}, defaultState(), {
+  onboarded: true,
+  core: core,
+  electives: electives,
+  bafsOption: bafsOpt,
+  vaOption: data.vaOption === 'p2' ? 'p2' : 'p1',
+  active: targetActive,
+  entries: sanitizeEntries(data.entries, bafsOpt),
+  language: data.language === 'zh' ? 'zh' : 'en',
+  theme: data.theme === 'light' ? 'light' : 'oled',
+  sortMode: ['chrono', 'completion', 'score', 'time'].indexOf(data.sortMode) >= 0 ? data.sortMode : 'chrono',
+  filterMode: ['all', 'done', 'pending'].indexOf(data.filterMode) >= 0 ? data.filterMode : 'all',
+  customCutoffs: mergeCutoffs(DEFAULT_CUTOFFS, data.customCutoffs)
+}));
+      setShowOnboarding(false);
+      setToast(t('toast.imported'));
+    } catch (err) {
+      setToast(t('toast.importFailed'));
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}, []);
 
     var handleSaveConfig = useCallback(function (cfg) {
       if (!cfg || !Array.isArray(cfg.core) || !Array.isArray(cfg.electives)) return;
@@ -1803,7 +1860,7 @@ var showClearConfirm = _ca[0], setShowClearConfirm = _ca[1];
     
     var clearAllModalEl = showClearConfirm
   ? h(ClearAllModal, {
-      onCancel: function () { setShowClearConfirm(false); },
+      onCancel: handleCancelClearAll,
       onConfirm: function () {
         try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
         window.location.reload();
