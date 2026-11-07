@@ -161,6 +161,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   body.theme-light .bg-emerald-500\/\[0\.12\] { background: rgba(16,185,129,0.14) !important; }
   body.theme-light .bg-emerald-500\/\[0\.06\] { background: rgba(16,185,129,0.08) !important; }
   body.theme-light .bg-emerald-500\/\[0\.03\] { background: rgba(16,185,129,0.05) !important; }
+  body.theme-light [class*="text-red-"] { color: #b91c1c !important; }
+  body.theme-light [class*="text-amber-"] { color: #b45309 !important; }
 </style>
 </head>
 <body>
@@ -265,6 +267,22 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       'toast.imported': 'Backup imported successfully',
       'toast.importFailed': 'Import failed — invalid JSON file',
       'toast.cutoffSaved': 'Cut-off thresholds updated',
+      'toast.savedWithoutScore': 'Entry saved without a usable score — left out of projections',
+      'storage.errorTitle': 'Changes not saved',
+      'storage.error': 'This browser refused to save your data locally, so recent changes may not survive a refresh. Export a backup to keep them.',
+      'storage.exportNow': 'Export backup',
+      'importConfirm.title': 'Replace current data?',
+      'importConfirm.desc': 'Importing {file} replaces your current subjects, settings, and all logged entries. Choose cancel to keep your data unchanged.',
+      'importConfirm.action': 'Replace data',
+      'stats.coverageComplete': 'All {total} paper types scored',
+      'stats.coverageIncomplete': '{scored} of {total} paper types scored',
+      'stats.provisional': 'Approx.',
+      'stats.excludedWeight': 'Tracked papers cover {tracked}% of this subject — the other {missing}% (e.g. SBA) is not tracked here and is excluded from this projection.',
+      'drawer.noScoreHint': 'No score entered — saving marks this paper as attempted (ungraded) and leaves it out of the projection.',
+      'drawer.scoreError.invalid': 'Enter a valid score: 45/50, 78%, or a raw mark.',
+      'drawer.scoreError.fraction': 'The mark cannot be higher than the total (e.g. 45/50).',
+      'drawer.scoreError.percent': 'A percentage cannot be above 100%.',
+      'drawer.scoreError.total': 'Raw marks cannot exceed this paper’s total of {max}.',
       'modal.welcome': 'Welcome to DSETracker',
       'modal.configure': 'Configure your subjects',
       'modal.welcomeDesc': 'Confirm your HKDSE subject combination. Chinese is optional for students taking Alternative Chinese (IGCSE/GCE AL/NCS).',
@@ -372,6 +390,22 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       'toast.imported': '備份匯入成功',
       'toast.importFailed': '匯入失敗 — JSON 檔案無效',
       'toast.cutoffSaved': '分數線已更新',
+      'toast.savedWithoutScore': '記錄已儲存，但沒有可用分數 — 不會計入預估',
+      'storage.errorTitle': '變更未儲存',
+      'storage.error': '此瀏覽器拒絕在本機儲存資料，最近的變更可能無法在重新載入後保留。請立即匯出備份。',
+      'storage.exportNow': '匯出備份',
+      'importConfirm.title': '確定要取代現有資料？',
+      'importConfirm.desc': '匯入 {file} 將取代你目前的科目、設定及所有記錄。選擇取消即可保留現有資料不變。',
+      'importConfirm.action': '取代資料',
+      'stats.coverageComplete': '全部 {total} 種試卷已有分數',
+      'stats.coverageIncomplete': '{total} 種試卷中已有 {scored} 種分數',
+      'stats.provisional': '暫定',
+      'stats.excludedWeight': '已追蹤試卷佔本科 {tracked}% — 其餘 {missing}%（例如校本評核）未有追蹤，未計入此預估。',
+      'drawer.noScoreHint': '未輸入分數 — 儲存後此試卷會標記為已嘗試（未評分），不會計入預估。',
+      'drawer.scoreError.invalid': '請輸入有效分數：45/50、78% 或卷面分數。',
+      'drawer.scoreError.fraction': '得分不能高於總分（例如 45/50）。',
+      'drawer.scoreError.percent': '百分比不能高於 100%。',
+      'drawer.scoreError.total': '卷面分數不能超過此卷總分 {max}。',
       'modal.welcome': '歡迎使用 DSETracker',
       'modal.configure': '設定你的科目',
       'modal.welcomeDesc': '確認你的 HKDSE 科目組合。修讀非華語/替代中文課程 (IGCSE/GCE AL) 的學生可不安裝中國語文。',
@@ -453,7 +487,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   }
 
   /* ============================================================
-     SCORE PARSER HELPER (HARDENED & CLAMPED)
+     SCORE PARSER HELPER (STRICT — IMPOSSIBLE VALUES ARE REJECTED)
      ============================================================ */
   function parsePaperScore(scoreStr, officialTotal) {
     if (scoreStr === null || scoreStr === undefined) return null;
@@ -468,6 +502,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       var num = Number(parts[0].trim());
       var den = Number(parts[1].trim());
       if (!isFinite(num) || !isFinite(den) || den <= 0 || num < 0) return null;
+      /* A mark larger than the total is impossible, so reject it instead of clamping. */
+      if (num > den) return null;
 
       var rawPct = (num / den) * 100;
       return { raw: num, total: den, pct: Math.min(100, Math.max(0, rawPct)) };
@@ -477,9 +513,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       if (!(new RegExp('^' + numberPattern + '\\s*%$')).test(str)) return null;
       var pctVal = Number(str.replace('%', '').trim());
       if (!isFinite(pctVal) || pctVal < 0) return null;
-      var clampedPct = Math.min(100, Math.max(0, pctVal));
+      /* Above 100% cannot happen, so reject it instead of clamping. */
+      if (pctVal > 100) return null;
       var totalMark = officialTotal || 100;
-      return { raw: (clampedPct / 100) * totalMark, total: totalMark, pct: clampedPct };
+      return { raw: (pctVal / 100) * totalMark, total: totalMark, pct: pctVal };
     }
 
     if (!(new RegExp('^' + numberPattern + '$')).test(str)) return null;
@@ -489,6 +526,32 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     if (rawVal > maxMark) return null;
     var computedPct = (rawVal / maxMark) * 100;
     return { raw: rawVal, total: maxMark, pct: Math.min(100, Math.max(0, computedPct)) };
+  }
+
+  /* Why a non-blank score string is unusable: 'invalid' | 'fraction' | 'percent' | 'total'.
+     Returns null when the string is valid or blank. */
+  function getScoreError(scoreStr, officialTotal) {
+    if (scoreStr === null || scoreStr === undefined) return null;
+    var str = String(scoreStr).trim();
+    if (!str) return null;
+    if (parsePaperScore(str, officialTotal)) return null;
+
+    var numberPattern = '\\d+(?:\\.\\d+)?';
+    if (str.indexOf('/') >= 0 && new RegExp('^' + numberPattern + '\\s*\\/\\s*' + numberPattern + '$').test(str)) {
+      var parts = str.split('/');
+      var num = Number(parts[0].trim());
+      var den = Number(parts[1].trim());
+      if (isFinite(num) && isFinite(den) && den > 0 && num > den) return 'fraction';
+    }
+    if (str.indexOf('%') >= 0 && new RegExp('^' + numberPattern + '\\s*%$').test(str)) {
+      var pctVal = Number(str.replace('%', '').trim());
+      if (isFinite(pctVal) && pctVal > 100) return 'percent';
+    }
+    if (new RegExp('^' + numberPattern + '$').test(str)) {
+      var maxMark = officialTotal && officialTotal > 0 ? officialTotal : 100;
+      if (Number(str) > maxMark) return 'total';
+    }
+    return 'invalid';
   }
 
   /* ============================================================
@@ -820,14 +883,22 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     return null;
   }
 
-  /* Calculate Normalized Subject Percentage & Projected Grade */
+  /* Calculate Normalized Subject Percentage & Projected Grade.
+     Also reports how many paper types actually have a score, and how much of the
+     subject's weighting is covered here (e.g. SBA is not tracked). */
   function calculateSubjectPerformance(id, state) {
-    var s = SUBJECTS[id]; if (!s) return { weightedPct: null, estimatedLevel: null };
+    var s = SUBJECTS[id];
+    var emptyPerf = { weightedPct: null, estimatedLevel: null, scoredPaperTypes: 0, totalPaperTypes: 0, provisional: false, trackedWeight: 0, untrackedWeight: 100 };
+    if (!s) return emptyPerf;
+
     var paperScores = {};
     var paperCounts = {};
+    var paperWeights = {};
 
     s.rows.forEach(function (row) {
       s.papersFor(row, state).forEach(function (p) {
+        var weight = (s.weighting && Number(s.weighting[p.id])) || 0;
+        paperWeights[p.id] = weight;
         var e = state.entries[ek(id, row, p.id)];
         if (e && e.done && !e.ungraded && e.score) {
           var parsed = parsePaperScore(e.score, s.totalMarks ? s.totalMarks[p.id] : 100);
@@ -839,17 +910,31 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       });
     });
 
+    var totalPaperTypes = Object.keys(paperWeights).length;
+    var scoredPaperTypes = Object.keys(paperScores).length;
+    var trackedWeight = 0;
+    Object.keys(paperWeights).forEach(function (pid) { trackedWeight += paperWeights[pid]; });
+    trackedWeight = Math.min(100, Math.round(trackedWeight * 10) / 10);
+
+    var coverage = {
+      scoredPaperTypes: scoredPaperTypes,
+      totalPaperTypes: totalPaperTypes,
+      provisional: scoredPaperTypes > 0 && scoredPaperTypes < totalPaperTypes,
+      trackedWeight: trackedWeight,
+      untrackedWeight: Math.max(0, Math.round((100 - trackedWeight) * 10) / 10)
+    };
+
     var totalWeight = 0;
     var weightedSum = 0;
 
     Object.keys(paperScores).forEach(function (pid) {
       var avgPct = paperScores[pid] / paperCounts[pid];
-      var w = s.weighting[pid] || 0;
+      var w = paperWeights[pid] || 0;
       weightedSum += avgPct * w;
       totalWeight += w;
     });
 
-    if (totalWeight === 0) return { weightedPct: null, estimatedLevel: null };
+    if (totalWeight === 0) return Object.assign({ weightedPct: null, estimatedLevel: null }, coverage);
 
     var normalizedPct = weightedSum / totalWeight;
     var roundedPct = Math.round(normalizedPct * 10) / 10;
@@ -866,7 +951,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       }
     }
 
-    return { weightedPct: roundedPct, estimatedLevel: estimatedLevel };
+    return Object.assign({ weightedPct: roundedPct, estimatedLevel: estimatedLevel }, coverage);
   }
 
   /* ---------- SAFE CUTOFF MERGING HELPER ---------- */
@@ -943,6 +1028,65 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     } catch (err) { return defaultState(); }
   }
 
+  /* Persist state and report whether the browser accepted the write. */
+  function saveStateToStorage(state) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      return { ok: true, message: '' };
+    } catch (err) {
+      return {
+        ok: false,
+        message: (err && err.message) ? String(err.message) : 'Unknown storage error'
+      };
+    }
+  }
+
+  /* Turn a parsed backup file into the state that would replace the current one.
+     Throws when the payload is not a usable DSETracker backup. */
+  function buildImportedState(data) {
+    if (!data || typeof data !== 'object' || Array.isArray(data) ||
+        !data.entries || typeof data.entries !== 'object' || Array.isArray(data.entries)) {
+      throw new Error('Invalid schema format');
+    }
+
+    var core = ['eng', 'math', 'csd'];
+    if (Array.isArray(data.core) && data.core.length) {
+      var filteredCore = data.core.filter(function (id) { return SUBJECTS[id] && SUBJECTS[id].core; });
+      if (filteredCore.length) core = filteredCore;
+    }
+    var electives = Array.isArray(data.electives)
+      ? data.electives.filter(function (id) { return SUBJECTS[id] && !SUBJECTS[id].core; }).slice(0, 3)
+      : [];
+
+    var validActiveIds = core.concat(electives);
+    var targetActive = (data.active && validActiveIds.indexOf(data.active) >= 0)
+      ? data.active
+      : (validActiveIds[0] || 'eng');
+
+    var bafsOpt = data.bafsOption === '2B' ? '2B' : '2A';
+
+    return Object.assign({}, defaultState(), {
+      onboarded: true,
+      core: core,
+      electives: electives,
+      bafsOption: bafsOpt,
+      vaOption: data.vaOption === 'p2' ? 'p2' : 'p1',
+      active: targetActive,
+      entries: sanitizeEntries(data.entries, bafsOpt),
+      language: data.language === 'zh' ? 'zh' : 'en',
+      theme: data.theme === 'light' ? 'light' : 'oled',
+      sortMode: ['chrono', 'completion', 'score', 'time'].indexOf(data.sortMode) >= 0 ? data.sortMode : 'chrono',
+      filterMode: ['all', 'done', 'pending'].indexOf(data.filterMode) >= 0 ? data.filterMode : 'all',
+      customCutoffs: mergeCutoffs(DEFAULT_CUTOFFS, data.customCutoffs)
+    });
+  }
+
+  /* Imports only take effect after the user confirms replacing current data. */
+  function applyImport(confirmed, currentState, pendingState) {
+    if (!confirmed || !pendingState) return currentState;
+    return pendingState;
+  }
+
   function rowLabel(k) { return k === 'SP' ? t('row.sample') : k === 'PP' ? t('row.practice') : k; }
   function rowSub(k) { return k === 'SP' ? 'SP' : k === 'PP' ? 'PP' : ''; }
 
@@ -1010,7 +1154,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                 isActive ? 'border-indigo-500/50 bg-indigo-500/10' : 'border-transparent hover:border-line hover:bg-white/[0.03]') },
               h('div', { className: 'flex items-center gap-2' },
                 h('span', { className: cls('flex-1 truncate text-[13px] font-medium', isActive ? 'text-white' : 'text-zinc-300') }, tName(s)),
-                perf.estimatedLevel ? h('span', { className: 'rounded bg-indigo-500/20 px-1.5 py-0.5 text-[9px] font-bold text-indigo-300 border border-indigo-500/30' }, perf.estimatedLevel) : null,
+                perf.estimatedLevel ? h('span', {
+                  className: cls('rounded px-1.5 py-0.5 text-[9px] font-bold border', perf.provisional ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'),
+                  title: perf.provisional ? t('stats.provisional') + ' — ' + t('stats.coverageIncomplete', { scored: perf.scoredPaperTypes, total: perf.totalPaperTypes }) : null
+                }, perf.provisional ? '~' + perf.estimatedLevel : perf.estimatedLevel) : null,
                 h('span', { className: 'text-[10px] tabular-nums text-zinc-500 shrink-0' }, p.done + '/' + p.total)),
               h('div', { className: 'mt-2 h-1 w-full overflow-hidden rounded-full bg-zinc-800' },
                 h('div', { className: cls('h-full rounded-full transition-all duration-500', p.pct === 100 ? 'bg-emerald-400' : 'bg-emerald-500'), style: { width: p.pct + '%' } })));
@@ -1253,6 +1400,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     var _cd = useState(entry && entry.completedDate ? entry.completedDate : getLocalDateStr());
     var completedDate = _cd[0], setCompletedDate = _cd[1];
 
+    var _err = useState(null); var scoreError = _err[0], setScoreError = _err[1];
+
     var scoreInputRef = useRef(null);
 
     useEffect(function () { 
@@ -1273,10 +1422,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     var handleSave = function () {
       var trimmedScore = String(score).trim();
 
-      if (trimmedScore && !parsePaperScore(trimmedScore, officialTotal)) {
-        alert('Enter a valid score, percentage, or score/total (for example: 45/50 or 78%).');
+      /* Validate before saving so an unusable score is never stored as if it counted. */
+      var scoreErr = trimmedScore && !ungraded ? getScoreError(trimmedScore, officialTotal) : null;
+      if (scoreErr) {
+        setScoreError(scoreErr);
+        if (scoreInputRef.current && scoreInputRef.current.focus) scoreInputRef.current.focus();
         return;
       }
+      setScoreError(null);
 
       var timeValue = String(timeSpent).trim() === '' ? 0 : Number(timeSpent);
       var safeTimeSpent = isFinite(timeValue) && timeValue >= 0
@@ -1343,12 +1496,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                 onChange: function (e) { 
                   var val = e.target.value;
                   setScore(val);
+                  setScoreError(null);
                   if (val.trim() !== '') setUngraded(false);
                 }, 
                 placeholder: t('drawer.scorePlaceholder'), 
-                className: 'w-full rounded-lg border border-line bg-[#0a0a0a] px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-600 outline-none transition focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/20' 
+                'aria-invalid': scoreError ? 'true' : 'false',
+                className: cls('w-full rounded-lg border bg-[#0a0a0a] px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-600 outline-none transition focus:ring-2', scoreError ? 'border-red-500/60 focus:border-red-500/60 focus:ring-red-500/20' : 'border-line focus:border-indigo-500/60 focus:ring-indigo-500/20') 
               }),
               (score && !ungraded && parsedScore) ? h('span', { className: 'absolute right-2.5 top-1/2 -translate-y-1/2 rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-400' }, Math.round(parsedScore.pct) + '%') : null),
+            scoreError ? h('p', { role: 'alert', className: 'mt-1.5 text-[11px] font-medium leading-snug text-red-400' }, t('drawer.scoreError.' + scoreError, { max: officialTotal })) : null,
+            (!scoreError && done && !ungraded && !String(score).trim()) ? h('p', { className: 'mt-1.5 text-[10px] leading-snug text-amber-400/80' }, t('drawer.noScoreHint')) : null,
             estimatedLevel ? h('div', { className: 'mt-2 rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-3 py-2 text-[11px] text-indigo-200' }, t('drawer.estLevel') + ' ', h('span', { className: 'font-semibold text-indigo-300 text-sm' }, estimatedLevel)) : null,
             h('label', { className: 'mt-2.5 flex cursor-pointer items-center gap-2 text-[12px] text-zinc-400 select-none' },
               h('input', { 
@@ -1357,6 +1514,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                 onChange: function (e) { 
                   var isChecked = e.target.checked;
                   setUngraded(isChecked);
+                  setScoreError(null);
                   if (isChecked) setScore('');
                 }, 
                 className: 'h-3.5 w-3.5 rounded border-zinc-600 bg-transparent' 
@@ -1511,6 +1669,37 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     );
   }
 
+  function ImportConfirmModal(props) {
+    var onCancel = props.onCancel;
+    useEffect(function () {
+      function handleKeyDown(e) {
+        if (e.key === 'Escape') onCancel();
+      }
+      window.addEventListener('keydown', handleKeyDown);
+      return function () {
+        window.removeEventListener('keydown', handleKeyDown);
+      };
+    }, [onCancel]);
+
+    return h('div', { className: 'fixed inset-0 z-[130] grid place-items-center p-4' },
+      h('div', { className: 'absolute inset-0 bg-black/70 backdrop-blur-sm', onClick: onCancel }),
+      h('div', {
+        role: 'alertdialog',
+        'aria-modal': 'true',
+        'aria-labelledby': 'import-confirm-title',
+        'aria-describedby': 'import-confirm-description',
+        className: 'relative w-full max-w-sm rounded-2xl border border-line bg-[#0a0a0a] p-5 shadow-2xl'
+      },
+        h('h2', { id: 'import-confirm-title', className: 'text-base font-semibold text-white' }, t('importConfirm.title')),
+        h('p', { id: 'import-confirm-description', className: 'mt-2 text-sm leading-relaxed text-zinc-400' }, t('importConfirm.desc', { file: props.fileName || 'backup' })),
+        h('div', { className: 'mt-5 flex justify-end gap-2' },
+          h('button', { type: 'button', onClick: onCancel, className: 'rounded-lg border border-line px-3.5 py-2 text-[12px] font-medium text-zinc-300 transition hover:border-zinc-600 hover:text-white' }, t('modal.cancel')),
+          h('button', { type: 'button', onClick: props.onConfirm, className: 'rounded-lg bg-indigo-500 px-3.5 py-2 text-[12px] font-semibold text-white transition hover:bg-indigo-400' }, t('importConfirm.action'))
+        )
+      )
+    );
+  }
+
   /* ============================================================
      CUTOFF ADJUSTMENT MODAL
      ============================================================ */
@@ -1611,14 +1800,25 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         h('div', { className: 'flex items-baseline gap-1 shrink-0' },
           h('span', { className: 'text-xl font-bold text-emerald-400' }, String(days)),
           h('span', { className: 'text-[10px] text-zinc-500' }, t('stats.daysToDSE')))),
-      h('div', { className: 'rounded-lg border border-line bg-[#0a0a0a] px-3.5 py-2 flex items-center justify-between' },
+      h('div', { className: 'rounded-lg border border-line bg-[#0a0a0a] px-3.5 py-2' },
         h('div', null,
-          h('div', { className: 'text-[9px] font-semibold uppercase tracking-[0.14em] text-zinc-500' }, t('stats.weighted') + ' — ' + (activeSubj ? activeSubj.abbr : '')),
+          h('div', { className: 'flex flex-wrap items-center gap-1.5' },
+            h('div', { className: 'text-[9px] font-semibold uppercase tracking-[0.14em] text-zinc-500' }, t('stats.weighted') + ' — ' + (activeSubj ? activeSubj.abbr : '')),
+            perf.provisional ? h('span', { className: 'rounded border border-amber-500/30 bg-amber-500/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-300' }, t('stats.provisional')) : null),
           perf.weightedPct !== null
             ? h('div', { className: 'mt-0.5 flex items-center gap-2' },
                 h('span', { className: 'text-xl font-bold text-indigo-400' }, perf.weightedPct + '%'),
-                perf.estimatedLevel ? h('span', { className: 'rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-500/30' }, perf.estimatedLevel) : null)
-            : h('div', { className: 'text-[10px] text-zinc-500 mt-0.5' }, t('stats.weightedEmpty')))));
+                perf.estimatedLevel ? h('span', { className: cls('rounded px-1.5 py-0.5 text-[10px] font-bold border', perf.provisional ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30') }, perf.provisional ? '~' + perf.estimatedLevel : perf.estimatedLevel) : null)
+            : h('div', { className: 'mt-0.5 text-[10px] text-zinc-500' }, t('stats.weightedEmpty')),
+          perf.weightedPct !== null
+            ? h('div', { className: cls('mt-0.5 text-[10px]', perf.provisional ? 'text-amber-400' : 'text-zinc-500') },
+                perf.provisional
+                  ? t('stats.coverageIncomplete', { scored: perf.scoredPaperTypes, total: perf.totalPaperTypes })
+                  : t('stats.coverageComplete', { total: perf.totalPaperTypes }))
+            : null,
+          perf.untrackedWeight > 0
+            ? h('div', { className: 'mt-0.5 text-[10px] leading-snug text-zinc-500' }, t('stats.excludedWeight', { tracked: perf.trackedWeight, missing: perf.untrackedWeight }))
+            : null)));
   }
 
   /* ============================================================
@@ -1637,11 +1837,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     var _sb = useState(false); var sidebarOpen = _sb[0], setSidebarOpen = _sb[1];
     var _tp = useState(null); var tip = _tp[0], setTip = _tp[1];
     var _ts = useState(null); var toast = _ts[0], setToast = _ts[1];
+    var _pi = useState(null); var pendingImport = _pi[0], setPendingImport = _pi[1];
+    var _se = useState(null); var storageError = _se[0], setStorageError = _se[1];
     var fileRef = useRef(null);
     var _ca = useState(false);
     var showClearConfirm = _ca[0], setShowClearConfirm = _ca[1];
 
-    useEffect(function () { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {} }, [state]);
+    useEffect(function () {
+      var result = saveStateToStorage(state);
+      setStorageError(result.ok ? null : result.message);
+    }, [state]);
     useEffect(function () { if (!toast) return; var t = setTimeout(function () { setToast(null); }, 2800); return function () { clearTimeout(t); }; }, [toast]);
 
     useEffect(function () {
@@ -1753,7 +1958,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       });
 
       setDrawer(null);
-      setToast(t('toast.saved'));
+      var totalMarks = (SUBJECTS[sid] && SUBJECTS[sid].totalMarks) ? SUBJECTS[sid].totalMarks[pid] : 100;
+      var savedWithScore = !!data.done && !data.ungraded && !!parsePaperScore(data.score, totalMarks);
+      setToast((savedWithScore || !data.done) ? t('toast.saved') : t('toast.savedWithoutScore'));
     }, []);
 
     var clearEntry = useCallback(function (sid, row, pid) { setState(function (s) { var next = Object.assign({}, s.entries); delete next[ek(sid, row, pid)]; return Object.assign({}, s, { entries: next }); }); setDrawer(null); setToast(t('toast.cleared')); }, []);
@@ -1772,41 +1979,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       reader.onload = function () {
         try {
           var data = JSON.parse(String(reader.result));
-          if (!data || typeof data !== 'object' || !data.entries || typeof data.entries !== 'object' || Array.isArray(data.entries)) {
-            throw new Error('Invalid schema format');
-          }
-          var core = ['eng', 'math', 'csd'];
-          if (Array.isArray(data.core) && data.core.length) {
-            var filteredCore = data.core.filter(function (id) { return SUBJECTS[id] && SUBJECTS[id].core; });
-            if (filteredCore.length) core = filteredCore;
-          }
-          var electives = Array.isArray(data.electives)
-            ? data.electives.filter(function (id) { return SUBJECTS[id] && !SUBJECTS[id].core; }).slice(0, 3)
-            : [];
-
-          var validActiveIds = core.concat(electives);
-          var targetActive = (data.active && validActiveIds.indexOf(data.active) >= 0)
-            ? data.active
-            : (validActiveIds[0] || 'eng');
-
-          var bafsOpt = data.bafsOption === '2B' ? '2B' : '2A';
-
-          setState(Object.assign({}, defaultState(), {
-            onboarded: true,
-            core: core,
-            electives: electives,
-            bafsOption: bafsOpt,
-            vaOption: data.vaOption === 'p2' ? 'p2' : 'p1',
-            active: targetActive,
-            entries: sanitizeEntries(data.entries, bafsOpt),
-            language: data.language === 'zh' ? 'zh' : 'en',
-            theme: data.theme === 'light' ? 'light' : 'oled',
-            sortMode: ['chrono', 'completion', 'score', 'time'].indexOf(data.sortMode) >= 0 ? data.sortMode : 'chrono',
-            filterMode: ['all', 'done', 'pending'].indexOf(data.filterMode) >= 0 ? data.filterMode : 'all',
-            customCutoffs: mergeCutoffs(DEFAULT_CUTOFFS, data.customCutoffs)
-          }));
-          setShowOnboarding(false);
-          setToast(t('toast.imported'));
+          var nextState = buildImportedState(data);
+          /* Hold the parsed backup until the user confirms replacing current data. */
+          setPendingImport({ fileName: file.name || 'backup.json', state: nextState });
         } catch (err) {
           setToast(t('toast.importFailed'));
         }
@@ -1814,6 +1989,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       reader.readAsText(file);
       e.target.value = '';
     }, []);
+
+    var confirmImport = useCallback(function () {
+      if (!pendingImport) return;
+      setState(function (s) { return applyImport(true, s, pendingImport.state); });
+      setPendingImport(null);
+      setShowOnboarding(false);
+      setToast(t('toast.imported'));
+    }, [pendingImport]);
+
+    var cancelImport = useCallback(function () { setPendingImport(null); }, []);
 
     var handleSaveConfig = useCallback(function (cfg) {
       if (!cfg || !Array.isArray(cfg.core) || !Array.isArray(cfg.electives)) return;
@@ -1876,6 +2061,17 @@ input[type="date"]::-webkit-calendar-picker-indicator {
           }
         })
       : null;
+
+    var importModalEl = pendingImport
+      ? h(ImportConfirmModal, { fileName: pendingImport.fileName, onCancel: cancelImport, onConfirm: confirmImport })
+      : null;
+
+    var storageBanner = storageError
+      ? h('div', { role: 'alert', className: 'flex flex-wrap items-center gap-x-2 gap-y-1.5 border-b border-red-500/40 bg-red-500/10 px-4 py-2 text-[11px] leading-snug text-red-200' },
+          h('span', { className: 'font-semibold' }, t('storage.errorTitle')),
+          h('span', { className: 'min-w-[180px] flex-1' }, t('storage.error')),
+          h('button', { type: 'button', onClick: handleExport, className: 'rounded-md border border-red-500/40 px-2 py-1 font-semibold text-red-100 transition hover:bg-red-500/20' }, t('storage.exportNow')))
+      : null;
     
     var toggleLanguage = useCallback(function () { setState(function (s) { var n = Object.assign({}, s); n.language = s.language === 'en' ? 'zh' : 'en'; return n; }); }, []);
     var toggleTheme = useCallback(function () {
@@ -1924,11 +2120,30 @@ input[type="date"]::-webkit-calendar-picker-indicator {
           h('div', { className: 'flex items-center gap-2' },
             h('div', { className: 'grid h-9 w-9 place-items-center rounded-lg border border-line text-[11px] font-semibold text-emerald-400' }, overall.pct),
             h('button', { onClick: toggleLanguage, className: 'grid h-9 px-2.5 place-items-center rounded-lg border border-line text-[11px] font-medium text-zinc-300 transition hover:border-zinc-600 hover:text-white' }, t('lang.toggle')))),
+        storageBanner,
         h('div', { className: 'flex-1 overflow-y-auto' },
           h(StatCards, { state: state }),
           h(SubjectPanel, { state: state, setState: setState, activeId: state.active, tipProps: tipProps, openDrawer: openDrawer, toggleEntry: toggleEntry }))),
       h('input', { ref: fileRef, type: 'file', accept: 'application/json,.json', className: 'hidden', onChange: handleImportFile }),
-      drawerEl, modalEl, cutoffModalEl, clearAllModalEl, tipEl, toastEl);
+      drawerEl, modalEl, cutoffModalEl, clearAllModalEl, importModalEl, tipEl, toastEl);
+  }
+
+  /* Exposed for the regression tests in tests/regression.test.mjs. */
+  if (typeof window !== 'undefined') {
+    window.__DSETRACK_TEST__ = {
+      STORAGE_KEY: STORAGE_KEY,
+      SUBJECTS: SUBJECTS,
+      DEFAULT_CUTOFFS: DEFAULT_CUTOFFS,
+      ek: ek,
+      defaultState: defaultState,
+      sanitizeEntries: sanitizeEntries,
+      parsePaperScore: parsePaperScore,
+      getScoreError: getScoreError,
+      buildImportedState: buildImportedState,
+      applyImport: applyImport,
+      saveStateToStorage: saveStateToStorage,
+      calculateSubjectPerformance: calculateSubjectPerformance
+    };
   }
 
   var rootEl = document.getElementById('root');
