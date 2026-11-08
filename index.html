@@ -1548,16 +1548,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
           done ? 'bg-emerald-500 border-emerald-500 text-[#07130e]' : 'border-zinc-600 bg-transparent group-hover:border-zinc-400')
       }, done ? h(CheckIcon, { className: 'h-4 w-4 sm:h-[18px] sm:w-[18px]' }) : null)),
       h('button', {
-        type: 'button',
-        'aria-label': chipLabel + ' — ' + t('chip.openDetails'),
-        onClick: onOpen,
-        className: 'min-w-0 flex-1 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60'
-      },
-        h('div', { className: cls('text-[13px] font-semibold leading-tight whitespace-nowrap sm:text-[14px]', done ? 'text-emerald-300' : 'text-zinc-300') }, paper.short),
-        /* The status line can outgrow the chip ("45/45 (not done)"); it clips with an
-           ellipsis at the text button's edge instead of spilling over the border. */
-        status ? h('div', { className: cls('text-[11px] leading-tight mt-0.5 truncate sm:text-[12px]', statusTone) }, status) : null
-      ),
+  type: 'button',
+  'aria-label': chipLabel + ' — ' + t('chip.openDetails'),
+  onClick: onOpen,
+  className: 'flex min-h-[33px] min-w-0 flex-1 flex-col justify-center rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 sm:min-h-0'
+},
+  h('div', { className: cls('text-[13px] font-semibold leading-tight whitespace-nowrap sm:text-[14px]', done ? 'text-emerald-300' : 'text-zinc-300') }, paper.short),
+  status ? h('div', { className: cls('text-[11px] leading-tight mt-0.5 truncate sm:text-[12px]', statusTone) }, status) : null
+),
       hasTime ? h('span', { className: 'text-[10px] font-mono text-zinc-500 shrink-0 hidden sm:inline' }, entry.timeSpent + 'm') : null,
       entry && entry.notes ? h('span', { className: 'hidden sm:block h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400', title: 'Has notes' }) : null
     );
