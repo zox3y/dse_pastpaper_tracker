@@ -710,7 +710,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       ]; },
       note: 'Paper 3 (Listening) and Paper 4 (Speaking) excluded — phased out under optimised curriculum.',
       noteZh: '卷三（聆聽）及卷四（說話）已排除 — 精簡課程下已取消。',
-      weighting: { p1: 50, p2: 50 }, totalMarks: { p1: 100, p2: 100 }
+      weighting: { p1: 50, p2: 50 }, totalMarks: { p1: 90, p2: 90 }
     },
     eng: {
       id: 'eng', core: true, name: 'English Language', zh: '英國語文', abbr: 'ENG', rows: ALL_ROWS,
@@ -720,7 +720,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         { id: 'p3', short: 'P3', name: 'Paper 3 — Listening & Integrated Skills', zh: '卷三 聆聽及綜合能力', officialTime: 120 },
         { id: 'p4', short: 'P4', name: 'Paper 4 — Speaking', zh: '卷四 說話能力', officialTime: 15 }
       ]; },
-      weighting: { p1: 20, p2: 25, p3: 30, p4: 25 }, totalMarks: { p1: 129, p2: 178, p3: 181, p4: 179 }
+      weighting: { p1: 20, p2: 25, p3: 30, p4: 25 }, totalMarks: { p1: 84, p2: 42, p3: 108, p4: 28 }
     },
     math: {
       id: 'math', core: true, name: 'Mathematics (Compulsory Part)', zh: '數學（必修部分）', abbr: 'MATH', rows: ALL_ROWS,
@@ -751,12 +751,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     phy: {
       id: 'phy', core: false, name: 'Physics', zh: '物理', abbr: 'PHY', rows: ALL_ROWS,
       papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective Part', '卷一 必修部分', '卷二 選修部分', 150, 60),
-      weighting: { p1: 60, p2: 20 }, totalMarks: { p1: 117, p2: 36 }
+      weighting: { p1: 60, p2: 20 }, totalMarks: { p1: 120, p2: 40 }
     },
     chem: {
       id: 'chem', core: false, name: 'Chemistry', zh: '化學', abbr: 'CHEM', rows: ALL_ROWS,
       papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective Part', '卷一 必修部分', '卷二 選修部分', 150, 60),
-      weighting: { p1: 60, p2: 20 }, totalMarks: { p1: 122, p2: 40 }
+      weighting: { p1: 60, p2: 20 }, totalMarks: { p1: 120, p2: 40 }
     },
     bio: {
       id: 'bio', core: false, name: 'Biology', zh: '生物', abbr: 'BIO', rows: ALL_ROWS,
@@ -766,7 +766,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     econ: {
       id: 'econ', core: false, name: 'Economics', zh: '經濟', abbr: 'ECON', rows: ALL_ROWS,
       papersFor: twoPapers('Paper 1 — Multiple Choice', 'Paper 2 — Conventional', '卷一 多項選擇題', '卷二 傳統題', 60, 135),
-      weighting: { p1: 30, p2: 70 }, totalMarks: { p1: 45, p2: 120 }
+      weighting: { p1: 30, p2: 70 }, totalMarks: { p1: 45, p2: 105 }
     },
     bafs: {
       id: 'bafs', core: false, name: 'Business, Accounting & Financial Studies', zh: '企業、會計與財務概論', abbr: 'BAFS', rows: ALL_ROWS,
@@ -779,27 +779,27 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             : { id: 'p2a', short: 'P2A', name: 'Paper 2A — Accounting Module', zh: '卷二A — 會計單元', officialTime: 135 }
         ];
       },
-      weighting: { p1: 40, p2a: 60, p2b: 60 }, totalMarks: { p1: 90, p2a: 80, p2b: 80 }
+      weighting: { p1: 40, p2a: 60, p2b: 60 }, totalMarks: { p1: 60, p2a: 80, p2b: 80 }
     },
     geo: {
       id: 'geo', core: false, name: 'Geography', zh: '地理', abbr: 'GEO', rows: ALL_ROWS,
       papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective Part', '卷一 必修部分', '卷二 選修部分', 150, 75),
-      weighting: { p1: 75, p2: 25 }, totalMarks: { p1: 86, p2: 40 }
+      weighting: { p1: 75, p2: 25 }, totalMarks: { p1: 90, p2: 40 }
     },
     hist: {
       id: 'hist', core: false, name: 'History', zh: '歷史', abbr: 'HIST', rows: ALL_ROWS,
       papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective Part', '卷一 必修部分', '卷二 選修部分', 105, 90),
-      weighting: { p1: 60, p2: 40 }, totalMarks: { p1: 60, p2: 40 }
+      weighting: { p1: 60, p2: 40 }, totalMarks: { p1: 60, p2: 60 }
     },
     chiHist: {
       id: 'chiHist', core: false, name: 'Chinese History', zh: '中國歷史', abbr: 'C.HIST', rows: ALL_ROWS,
       papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective Part', '卷一 必修部分', '卷二 選修部分', 135, 80),
-      weighting: { p1: 70, p2: 30 }, totalMarks: { p1: 90, p2: 50 }
+      weighting: { p1: 70, p2: 30 }, totalMarks: { p1: 100, p2: 50 }
     },
     ict: {
       id: 'ict', core: false, name: 'Information & Communication Technology', zh: '資訊及通訊科技', abbr: 'ICT', rows: ALL_ROWS,
       papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective Part', '卷一 必修部分', '卷二 選修部分', 120, 90),
-      weighting: { p1: 55, p2: 25 }, totalMarks: { p1: 80, p2: 40 }
+      weighting: { p1: 55, p2: 25 }, totalMarks: { p1: 100, p2: 60 }
     },
     chiLit: {
       id: 'chiLit', core: false, name: 'Chinese Literature', zh: '中國文學', abbr: 'C.LIT', rows: ALL_ROWS,
@@ -819,22 +819,22 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     ths: {
       id: 'ths', core: false, name: 'Tourism & Hospitality Studies', zh: '旅遊與款待', abbr: 'THS', rows: ALL_ROWS,
       papersFor: twoPapers('Paper 1 — Multiple Choice & Data-Response', 'Paper 2 — Essay Questions', '卷一 多項選擇及資料回應題', '卷二 論述題', 90, 105),
-      weighting: { p1: 50, p2: 50 }, totalMarks: { p1: 50, p2: 40 }
+      weighting: { p1: 50, p2: 50 }, totalMarks: { p1: 60, p2: 70 }
     },
     dat: {
       id: 'dat', core: false, name: 'Design & Applied Technology', zh: '設計與應用科技', abbr: 'DAT', rows: ALL_ROWS,
       papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective Part', '卷一 必修部分', '卷二 選修部分', 120, 120),
-      weighting: { p1: 30, p2: 40 }, totalMarks: { p1: 70, p2: 80 }
+      weighting: { p1: 30, p2: 40 }, totalMarks: { p1: 60, p2: 80 }
     },
     hmsc: {
       id: 'hmsc', core: false, name: 'Health Management & Social Care', zh: '健康管理與社會關懷', abbr: 'HMSC', rows: ALL_ROWS,
       papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective & Compulsory Part', '卷一 必修部分', '卷二 選修及必修部分', 120, 105),
-      weighting: { p1: 46, p2: 34 }, totalMarks: { p1: 80, p2: 70 }
+      weighting: { p1: 46, p2: 34 }, totalMarks: { p1: 80, p2: 60 }
     },
     techLiv: {
       id: 'techLiv', core: false, name: 'Technology & Living', zh: '科技與生活', abbr: 'T&L', rows: ALL_ROWS,
       papersFor: twoPapers('Paper 1 — Compulsory Part', 'Paper 2 — Elective Part', '卷一 必修部分', '卷二 選修部分', 90, 120),
-      weighting: { p1: 30, p2: 40 }, totalMarks: { p1: 70, p2: 80 }
+      weighting: { p1: 30, p2: 40 }, totalMarks: { p1: 100, p2: 60 }
     },
     music: {
       id: 'music', core: false, name: 'Music', zh: '音樂', abbr: 'MUS', rows: ALL_ROWS,
@@ -842,7 +842,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         { id: 'p1a', short: 'P1A', name: 'Paper 1A — Listening (Western Classical)', zh: '卷一A — 聆聽（西洋古典音樂）', officialTime: 105 },
         { id: 'p1b', short: 'P1B', name: 'Paper 1B — Listening (Chinese & Pop)', zh: '卷一B — 聆聽（中國音樂與流行音樂）', officialTime: 105 }
       ]; },
-      weighting: { p1a: 20, p1b: 20 }, totalMarks: { p1a: 50, p1b: 50 }
+      weighting: { p1a: 20, p1b: 20 }, totalMarks: { p1a: 80, p1b: 50 }
     },
     va: {
       id: 'va', core: false, name: 'Visual Arts', zh: '視覺藝術', abbr: 'VA', rows: ALL_ROWS,
@@ -859,7 +859,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     pe: {
       id: 'pe', core: false, name: 'Physical Education', zh: '體育', abbr: 'PE', rows: ALL_ROWS,
       papersFor: twoPapers('Paper 1 — Theory Paper 1', 'Paper 2 — Theory Paper 2', '卷一 理論試卷一', '卷二 理論試卷二', 120, 90),
-      weighting: { p1: 40, p2: 20 }, totalMarks: { p1: 83, p2: 42 }
+      weighting: { p1: 40, p2: 20 }, totalMarks: { p1: 87, p2: 42 }
     }
   };
 
