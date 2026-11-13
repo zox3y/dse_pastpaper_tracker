@@ -52,11 +52,13 @@ self.addEventListener('fetch', (event) => {
       if (cached) return cached;
       return fetch(request)
         .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE).then((cache) => cache.put(request, copy)).catch(() => {});
+          if (response && (response.ok || response.type === 'opaque')) {
+            const copy = response.clone();
+            caches.open(CACHE).then((cache) => cache.put(request, copy)).catch(() => {});
+          }
           return response;
         })
-        .catch(() => caches.match('./index.html'));
+        .catch(() => new Response('', { status: 503, statusText: 'Offline' }));
     })
   );
 });

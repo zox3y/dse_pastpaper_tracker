@@ -35,32 +35,31 @@
 
 <style>
   :root { color-scheme: dark; --ring-track: #1f1f1f; }
-  html, body, #root { 
-    height: 100%; 
-    height: 100dvh; 
-  }
   body {
     margin: 0;
     background: #000000;
     color: #e4e4e7;
     -webkit-font-smoothing: antialiased;
     font-family: Inter, -apple-system, "SF Pro Display", system-ui, sans-serif;
-    overscroll-behavior: none;
+    font-variant-numeric: tabular-nums;
   }
-  .safe-pt { padding-top: env(safe-area-inset-top, 0px); }
-  .safe-pb { padding-bottom: env(safe-area-inset-bottom, 0px); }
-  .safe-pl { padding-left: env(safe-area-inset-left, 0px); }
-  .safe-pr { padding-right: env(safe-area-inset-right, 0px); }
 
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: #1f1f1f; border-radius: 999px; border: 2px solid #000000; }
   ::-webkit-scrollbar-thumb:hover { background: #333; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   @keyframes dseSlideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+  @keyframes dseSheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
   @keyframes dseFadeIn { from { opacity: 0; } to { opacity: 1; } }
   @keyframes dsePop { 0% { transform: scale(.96); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
   @keyframes dseToast { 0% { transform: translateY(12px); opacity: 0 } 100% { transform: translateY(0); opacity: 1 } }
   .anim-slide { animation: dseSlideIn .24s cubic-bezier(.22,1,.36,1); }
+  .anim-drawer { animation: dseSheetUp .24s cubic-bezier(.22,1,.36,1); }
+  @media (min-width: 640px) {
+    .anim-drawer { animation: dseSlideIn .24s cubic-bezier(.22,1,.36,1); }
+  }
   .anim-fade { animation: dseFadeIn .18s ease-out; }
   .anim-pop { animation: dsePop .18s cubic-bezier(.22,1,.36,1); }
   .anim-toast { animation: dseToast .2s ease-out; }
@@ -124,6 +123,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   body.theme-light .bg-\[\#1a1a1a\] { background: #ffffff !important; }
   body.theme-light .bg-\[\#141414\] { background: #f4f4f5 !important; }
   body.theme-light .bg-black\/85 { background: rgba(255,255,255,0.9) !important; }
+  body.theme-light .bg-black\/95 { background: rgba(255,255,255,0.96) !important; }
   body.theme-light .bg-black\/70 { background: rgba(0,0,0,0.4) !important; }
   body.theme-light .border-line { border-color: #e4e4e7 !important; }
   body.theme-light .border-line\/60 { border-color: #ededf0 !important; }
@@ -135,7 +135,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   body.theme-light .text-zinc-500 { color: #71717a !important; }
   body.theme-light .text-zinc-600 { color: #a1a1aa !important; }
   body.theme-light .text-zinc-700 { color: #d4d4d8 !important; }
-  body.theme-light .bg-zinc-700,
+  body.theme-light .bg-zinc-700 { background: #d4d4d8 !important; }
   body.theme-light .bg-zinc-800 { background: #e4e4e7 !important; }
   body.theme-light .bg-zinc-700\/40 { background: rgba(0,0,0,0.06) !important; }
   body.theme-light .border-zinc-600 { border-color: #d4d4d8 !important; }
@@ -152,10 +152,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   body.theme-light .hover\:bg-\[\#15151a\]:hover { background: #f4f4f5 !important; }
   body.theme-light [class*="text-emerald-"] { color: #047857 !important; }
   body.theme-light [class*="text-indigo-"] { color: #4338ca !important; }
+  body.theme-light [class*="text-violet-"] { color: #6d28d9 !important; }
+  body.theme-light [class*="text-sky-"] { color: #0369a1 !important; }
+  body.theme-light [class*="text-slate-"] { color: #334155 !important; }
+  body.theme-light [class*="text-rose-"] { color: #be123c !important; }
   body.theme-light .bg-indigo-500,
   body.theme-light .bg-indigo-400 { background: #6366f1 !important; }
   body.theme-light .bg-indigo-500.text-white,
-  body.theme-light .bg-indigo-500 .text-white { color: #ffffff !important; }
+  body.theme-light .bg-indigo-500 .text-white,
+  body.theme-light .bg-red-500.text-white { color: #ffffff !important; }
   body.theme-light .bg-emerald-500 { background: #10b981 !important; }
   body.theme-light .bg-emerald-500.text-white,
   body.theme-light .bg-emerald-500 .text-white { color: #04140d !important; }
@@ -169,8 +174,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   body.theme-light [class*="text-amber-"] { color: #b45309 !important; }
 
   /* ---------- VIEWPORT, SCROLLING, TOUCH, MOTION ---------- */
-  /* One viewport unit everywhere: the visual viewport (dvh) is what the browser
-     actually shows once its chrome is accounted for. 100vh is only the fallback. */
   :root { --app-h: 100vh; }
   @supports (height: 100dvh) { :root { --app-h: 100dvh; } }
   html, body, #root { height: var(--app-h); }
@@ -179,9 +182,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   .h-app { height: 100vh; height: 100dvh; }
   .dse-safe { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
   .dse-safe-pt { padding-top: env(safe-area-inset-top, 0px); }
-  /* Each nested scroller owns its gesture and never chains overscroll upward. */
-  /* No -webkit-overflow-scrolling: touch: it is the documented trigger for sticky headers
-     jittering inside a scroller and is redundant on iOS 13+. */
   .dse-scroll { overscroll-behavior-y: contain; overscroll-behavior-x: none; }
   button, a, input, select, textarea, [role="button"], [role="group"], [role="switch"] { touch-action: manipulation; }
   .dse-modal-body { max-height: 62vh; }
@@ -197,8 +197,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     height: 44px;
     transform: translate(-50%, -50%);
   }
-    /* WebKit promotes a blurred sticky/fixed layer and then ghosts or mis-stacks it;
-       on touch devices a solid tint is used instead of a backdrop filter. */
     .dse-header-blur { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; background: rgba(0,0,0,0.96) !important; }
     body.theme-light .dse-header-blur { background: rgba(255,255,255,0.97) !important; }
   }
@@ -274,6 +272,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       'panel.filterAll': 'All Papers',
       'panel.filterDone': 'Completed',
       'panel.filterPending': 'Pending',
+      'panel.filterRedo': 'Needs Redo',
+      'panel.targetLabel': 'Target ≥ Lv {lvl}',
       'panel.sortLabel': 'Sort',
       'panel.filterLabel': 'Filter',
       'panel.legendHint': 'Click a block to log details · click checkbox to quick-toggle',
@@ -292,7 +292,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       'drawer.completed': 'Mark as completed',
       'drawer.completedHint': 'Track this paper as done',
       'drawer.score': 'Score Input (out of {max} marks)',
-      'drawer.scorePlaceholder': 'Raw mark (e.g. 45/45 or 85) or % (e.g. 78%)',
+      'drawer.scorePlaceholder': 'e.g. 35/{max}, 35, or 78%',
       'drawer.graded': 'GRADED',
       'drawer.ungraded': 'Done without formal grading (Ungraded)',
       'drawer.attemptedBadge': 'Saved as Attempted',
@@ -303,6 +303,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       'drawer.savedTime': '-{m} mins remaining',
       'drawer.notes': 'Reflections & Notes',
       'drawer.notesPlaceholder': 'Finished part A only… Ran out of time on Section B…',
+      'drawer.presetsLabel': 'Quick Tags',
+      'drawer.prevPaper': 'Previous paper ([)',
+      'drawer.nextPaper': 'Next paper (])',
       'drawer.estLevel': 'Estimated DSE Level:',
       'drawer.estNote': '(calculated from total subject percentage & cut-offs)',
       'drawer.clear': 'Clear',
@@ -365,6 +368,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       'preset.trig': 'Got tripped up by trigonometry properties',
       'preset.mcCareless': 'Careless mistakes on the MC section',
       'preset.redo': 'Need to redo under strict exam conditions',
+      'chip.hasNotes': 'Has notes',
+      'cutoff.error.range': '{abbr} — {lvl} must be a percentage between 0 and 100.',
+      'cutoff.error.order': '{abbr} — Threshold for {lvl} ({val}%) must be strictly higher than {nextLvl} ({nextVal}%).',
       'theme.toLight': 'Light Mode',
       'theme.toDark': 'Dark Mode',
       'lang.toggle': '中文',
@@ -412,6 +418,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       'panel.filterAll': '所有試卷',
       'panel.filterDone': '已完成',
       'panel.filterPending': '未完成',
+      'panel.filterRedo': '需重做',
+      'panel.targetLabel': '目標 ≥ {lvl} 級',
       'panel.sortLabel': '排序',
       'panel.filterLabel': '篩選',
       'panel.legendHint': '點擊方塊以記錄詳情 · 點擊方格以快速切換',
@@ -429,8 +437,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       'mobile.openMenu': '開啟選單',
       'drawer.completed': '標記為已完成',
       'drawer.completedHint': '將此試卷標記為已完成',
-      'drawer.score': '分數輸入 (out of {max} marks)',
-      'drawer.scorePlaceholder': '卷面分數 (如 45/45 或 85) 或 % (如 78%)',
+      'drawer.score': '分數輸入（滿分 {max} 分）',
+      'drawer.scorePlaceholder': '例如 35/{max}、35 或 78%',
       'drawer.graded': '已評分',
       'drawer.ungraded': '未經正式評分完成',
       'drawer.attemptedBadge': '以「已嘗試」狀態儲存',
@@ -441,6 +449,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       'drawer.savedTime': '剩餘 {m} 分鐘',
       'drawer.notes': '反思與筆記',
       'drawer.notesPlaceholder': '只完成甲部… 乙部時間不足…',
+      'drawer.presetsLabel': '快速標籤',
+      'drawer.prevPaper': '上一份試卷 ([)',
+      'drawer.nextPaper': '下一份試卷 (])',
       'drawer.estLevel': '預估 DSE 等級：',
       'drawer.estNote': '（基於科目加權百分比與歷年分數線）',
       'drawer.clear': '清除',
@@ -503,6 +514,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       'preset.trig': '三角函數性質出錯',
       'preset.mcCareless': 'MC 部分粗心錯誤',
       'preset.redo': '需在嚴格考試環境下重做',
+      'chip.hasNotes': '附有筆記',
+      'cutoff.error.range': '{abbr} — {lvl} 的分數線必須介乎 0 至 100% 之間。',
+      'cutoff.error.order': '{abbr} — {lvl}（{val}%）的分數線必須高於 {nextLvl}（{nextVal}%）。',
       'theme.toLight': '淺色模式',
       'theme.toDark': '深色模式',
       'lang.toggle': 'ENG',
@@ -947,7 +961,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         if (val === null) continue;
         if (val < 0 || val > 100) {
           var subjObj = (typeof SUBJECTS !== 'undefined' && SUBJECTS[sid]);
-          return (subjObj ? subjObj.abbr : sid) + ' — ' + levels[l] + ' must be a percentage between 0 and 100.';
+          return t('cutoff.error.range', { abbr: subjObj ? subjObj.abbr : sid, lvl: levels[l] });
         }
         activeLevels.push({ lvl: levels[l], val: val });
       }
@@ -956,7 +970,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         if (activeLevels[i].val <= activeLevels[i + 1].val) {
           var subj = (typeof SUBJECTS !== 'undefined' && SUBJECTS[sid]);
           var subjName = subj ? (subj.abbr || subj.name) : sid;
-          return subjName + ' — Threshold for ' + activeLevels[i].lvl + ' (' + activeLevels[i].val + '%) must be strictly higher than ' + activeLevels[i + 1].lvl + ' (' + activeLevels[i + 1].val + '%).';
+          return t('cutoff.error.order', {
+            abbr: subjName,
+            lvl: activeLevels[i].lvl,
+            val: activeLevels[i].val,
+            nextLvl: activeLevels[i + 1].lvl,
+            nextVal: activeLevels[i + 1].val
+          });
         }
       }
     }
@@ -965,6 +985,29 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
   /* ---------- GRADE PROJECTION HELPERS ---------- */
   var CUTOFF_LEVELS = ['5**', '5*', '5', '4', '3', '2', '1'];
+
+  function levelBadgeClasses(level, provisional) {
+    var tier;
+    if (level === '5**') tier = 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+    else if (level === '5*') tier = 'bg-violet-500/20 text-violet-300 border-violet-500/40';
+    else if (level === '5') tier = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+    else if (level === '4') tier = 'bg-sky-500/20 text-sky-300 border-sky-500/40';
+    else if (level === '3') tier = 'bg-slate-500/20 text-slate-300 border-slate-500/40';
+    else tier = 'bg-rose-500/20 text-rose-300 border-rose-500/40';
+    return cls(tier, provisional ? 'border-dashed' : '');
+  }
+
+  /* A preset phrase only counts when it appears as its own line in the notes, so an
+     ad-hoc sentence like "no need to redo" can never flag the paper. Both languages are
+     checked so a note written in the other UI language is still recognised. */
+  function notesHasPreset(notes, key) {
+    if (!notes) return false;
+    var phraseEn = STRINGS.en[key];
+    var phraseZh = STRINGS.zh[key];
+    var lines = String(notes).split('\n').map(function (line) { return line.trim(); });
+    return (!!phraseEn && lines.indexOf(phraseEn) >= 0) ||
+           (!!phraseZh && lines.indexOf(phraseZh) >= 0);
+  }
 
   /* Effective threshold for one level. A blank or missing saved value means
      "use the default", so clearing a field can never make a level unreachable. */
@@ -987,6 +1030,19 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       if (cutoffVal !== null && pct >= cutoffVal) return CUTOFF_LEVELS[i];
     }
     return 'U';
+  }
+
+  function paperNeedsRedo(subj, pid, entry, state) {
+    if (!entry) return false;
+    if (notesHasPreset(entry.notes, 'preset.redo')) return true;
+    if (entry.done && !entry.ungraded && entry.score) {
+      var maxMark = subj && subj.totalMarks ? subj.totalMarks[pid] : 100;
+      var parsed = parsePaperScore(entry.score, maxMark);
+      var targetLvl = (state && state.targetLevel) || '4';
+      var cutoff = resolveCutoff(subj.id, targetLvl, state && state.customCutoffs);
+      if (parsed && cutoff !== null && parsed.pct < cutoff) return true;
+    }
+    return false;
   }
 
   /* Calculate Normalized Subject Percentage & Projected Grade.
@@ -1103,6 +1159,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       theme: 'oled',
       sortMode: 'chrono',
       filterMode: 'all',
+      targetLevel: '4',
       /* Empty by design: DEFAULT_CUTOFFS stays authoritative so new defaults reach
          existing users instead of being shadowed by a saved copy. */
       customCutoffs: {}
@@ -1119,12 +1176,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       /* An empty (or entirely invalid) saved subject list must fall back to the defaults,
          otherwise the dashboard has no subjects at all. */
       var core = Array.isArray(data.core)
-        ? data.core.filter(function (x) { return SUBJECTS[x] && SUBJECTS[x].core; })
+        ? data.core.filter(function (x, i, arr) { return SUBJECTS[x] && SUBJECTS[x].core && arr.indexOf(x) === i; })
         : [];
       if (!core.length) core = b.core.slice();
 
       var electives = Array.isArray(data.electives)
-        ? data.electives.filter(function (x) { return SUBJECTS[x] && !SUBJECTS[x].core; }).slice(0, 3)
+        ? data.electives.filter(function (x, i, arr) { return SUBJECTS[x] && !SUBJECTS[x].core && arr.indexOf(x) === i; }).slice(0, 3)
         : b.electives.slice();
 
       var activeIds = core.concat(electives);
@@ -1141,7 +1198,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         language: data.language === 'zh' ? 'zh' : 'en',
         theme: data.theme === 'light' ? 'light' : 'oled',
         sortMode: ['chrono','completion','score','time'].indexOf(data.sortMode) >= 0 ? data.sortMode : 'chrono',
-        filterMode: ['all','done','pending'].indexOf(data.filterMode) >= 0 ? data.filterMode : 'all',
+        filterMode: ['all','done','pending','redo'].indexOf(data.filterMode) >= 0 ? data.filterMode : 'all',
+        targetLevel: CUTOFF_LEVELS.indexOf(data.targetLevel) >= 0 ? data.targetLevel : '4',
         customCutoffs: mergeCutoffs({}, data.customCutoffs)
       });
     } catch (err) { return defaultState(); }
@@ -1170,7 +1228,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
     var core = ['eng', 'math', 'csd'];
     if (Array.isArray(data.core) && data.core.length) {
-      var filteredCore = data.core.filter(function (id) { return SUBJECTS[id] && SUBJECTS[id].core; });
+      var filteredCore = data.core.filter(function (id, i, arr) { return SUBJECTS[id] && SUBJECTS[id].core && arr.indexOf(id) === i; });
       /* English, Maths and CSD are compulsory: an incomplete list falls back to the trio. */
       var hasCompulsoryCore = ['eng', 'math', 'csd'].every(function (id) {
         return filteredCore.indexOf(id) >= 0;
@@ -1178,7 +1236,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       if (hasCompulsoryCore) core = filteredCore;
     }
     var electives = Array.isArray(data.electives)
-      ? data.electives.filter(function (id) { return SUBJECTS[id] && !SUBJECTS[id].core; }).slice(0, 3)
+      ? data.electives.filter(function (id, i, arr) { return SUBJECTS[id] && !SUBJECTS[id].core && arr.indexOf(id) === i; }).slice(0, 3)
       : [];
 
     var validActiveIds = core.concat(electives);
@@ -1200,7 +1258,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       language: data.language === 'zh' ? 'zh' : 'en',
       theme: data.theme === 'light' ? 'light' : 'oled',
       sortMode: ['chrono', 'completion', 'score', 'time'].indexOf(data.sortMode) >= 0 ? data.sortMode : 'chrono',
-      filterMode: ['all', 'done', 'pending'].indexOf(data.filterMode) >= 0 ? data.filterMode : 'all',
+      filterMode: ['all', 'done', 'pending', 'redo'].indexOf(data.filterMode) >= 0 ? data.filterMode : 'all',
+      targetLevel: CUTOFF_LEVELS.indexOf(data.targetLevel) >= 0 ? data.targetLevel : '4',
       customCutoffs: mergeCutoffs({}, data.customCutoffs)
     });
   }
@@ -1216,6 +1275,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   /* Quote only the fields that would otherwise break the row; "" escapes a quote. */
   function csvField(value) {
     var s = value === null || value === undefined ? '' : String(value);
+    if (/^[=+\-@]/.test(s)) s = "'" + s;
     if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
     return s;
   }
@@ -1263,15 +1323,17 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     var pad = function (n) { return ('0' + n).slice(-2); };
     var stamp = getLocalDateStr() + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes());
 
+    var activeSubject = SUBJECTS[state.active];
+    var activeSubjectLabel = activeSubject ? tName(activeSubject) + ' (' + (EXAM_DATES[state.active] || '') + ')' : (EXAM_DATES[state.active] || '');
     var meta = [
       'DSETracker Export',
       'Exported: ' + stamp,
       '',
       'Selected Subjects:',
-      '  Core: ' + coreNames.join(', '),
-      '  Electives: ' + electiveNames.join(', '),
+      csvField('  Core: ' + coreNames.join(', ')),
+      csvField('  Electives: ' + electiveNames.join(', ')),
       '',
-      'Exam Target: ' + (EXAM_DATES[state.active] || ''),
+      csvField('Exam Target: ' + activeSubjectLabel),
       '',
       'Overall Progress: ' + done + ' / ' + total + ' papers (' + overallPct + '%)',
       ''
@@ -1291,7 +1353,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       var ra = ALL_ROWS.indexOf(pa[1]); if (ra < 0) ra = ALL_ROWS.length;
       var rb = ALL_ROWS.indexOf(pb[1]); if (rb < 0) rb = ALL_ROWS.length;
       if (ra !== rb) return ra - rb;
-      return pa[1] < pb[1] ? -1 : (pa[1] > pb[1] ? 1 : 0);
+      return pa[2] < pb[2] ? -1 : (pa[2] > pb[2] ? 1 : 0);
     });
 
     var rows = [[
@@ -1334,25 +1396,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       h('path', { d: 'M20 6L9 17l-5-5' }));
   }
 
-  function Ring(props) {
-    var pct = props.pct || 0, size = props.size || 96, stroke = props.stroke || 8;
-    var r = (size - stroke) / 2, c = 2 * Math.PI * r;
-    var clamped = Math.min(100, Math.max(0, pct));
-    var offset = c - (clamped / 100) * c;
-    /* A stable per-instance id: regenerating it every render forces a gradient repaint. */
-    var uid = React.useId ? React.useId() : null;
-    var gradId = 'dseGrad_' + (uid ? uid.replace(/[^a-zA-Z0-9_-]/g, '') : 'ring');
-    return h('div', { className: 'relative shrink-0', style: { width: size, height: size } },
-      h('svg', { width: size, height: size, className: '-rotate-90' },
-        h('defs', null, h('linearGradient', { id: gradId, x1: 0, y1: 0, x2: 1, y2: 1 },
-          h('stop', { offset: '0%', stopColor: '#10b981' }), h('stop', { offset: '100%', stopColor: '#34d399' }))),
-        h('circle', { cx: size / 2, cy: size / 2, r: r, fill: 'none', stroke: 'var(--ring-track, #1f1f1f)', strokeWidth: stroke }),
-        h('circle', { cx: size / 2, cy: size / 2, r: r, fill: 'none', stroke: 'url(#' + gradId + ')', strokeWidth: stroke, strokeDasharray: c, strokeDashoffset: offset, strokeLinecap: 'round', style: { transition: 'stroke-dashoffset .55s cubic-bezier(.22,1,.36,1)' } })
-      ),
-      h('div', { className: 'absolute inset-0 grid place-items-center' }, props.children)
-    );
-  }
-
   function Switch(props) {
     var checked = props.checked;
     return h('button', { type: 'button', role: 'switch', 'aria-checked': checked, onClick: function () { props.onChange(!checked); },
@@ -1364,7 +1407,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
      SIDEBAR
      ============================================================ */
   function Sidebar(props) {
-    var state = props.state, overall = props.overall;
+    var state = props.state;
     return h('aside', { className: 'flex h-full w-[300px] flex-col border-r border-line bg-black dse-safe' },
       h('div', { className: 'px-5 py-5 border-b border-line' },
         h('div', { className: 'flex items-center gap-2.5' },
@@ -1376,27 +1419,20 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             h('div', { className: 'text-[10px] uppercase tracking-[0.18em] text-zinc-500' }, t('app.subtitle'))),
           h('button', { onClick: props.onClose, className: 'ml-auto grid h-11 w-11 place-items-center rounded-lg text-zinc-500 hover:bg-white/5 hover:text-zinc-200 lg:hidden', 'aria-label': t('drawer.close') },
             h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, className: 'h-4 w-4' }, h('path', { d: 'M6 6l12 12M18 6L6 18' }))))),
-      h('div', { className: 'hidden px-5 py-5 border-b border-line' },
-        h('div', { className: 'flex items-center gap-4' },
-          h(Ring, { pct: overall.pct, size: 78, stroke: 7 },
-            h('span', { className: 'text-lg font-semibold text-emerald-400 leading-none' }, overall.pct, h('span', { className: 'text-[10px]' }, '%'))),
-          h('div', { className: 'min-w-0' },
-            h('div', { className: 'text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500' }, t('sidebar.overall')),
-            h('div', { className: 'text-sm font-medium mt-1' }, t('sidebar.papersCount', { done: overall.done, total: overall.total })),
-            h('div', { className: 'text-[11px] text-zinc-500 mt-0.5' }, t('sidebar.activeSubjects', { n: props.activeIds.length }))))),
       h('div', { className: 'flex-1 overflow-y-auto px-3 py-3 dse-scroll' },
         h('div', { className: 'px-2 pb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-600' }, t('sidebar.mySubjects')),
         h('div', { className: 'space-y-1' },
-          props.activeIds.map(function (id) {
+          props.activeIds.map(function (id, idx) {
             var s = SUBJECTS[id]; var p = subjectProgress(id, state); var isActive = state.active === id;
             var perf = calculateSubjectPerformance(id, state);
             return h('button', { key: id, onClick: function () { props.setActive(id); },
               className: cls('w-full text-left rounded-xl border px-3 py-2.5 transition-all duration-150',
                 isActive ? 'border-indigo-500/50 bg-indigo-500/10' : 'border-transparent hover:border-line hover:bg-white/[0.03]') },
               h('div', { className: 'flex items-center gap-2' },
+                idx < 7 ? h('span', { className: 'hidden lg:inline-grid h-4 w-4 shrink-0 place-items-center rounded border border-line/80 bg-[#0a0a0a] text-[9px] font-semibold tabular-nums text-zinc-500' }, String(idx + 1)) : null,
                 h('span', { className: cls('flex-1 truncate text-[13px] font-medium', isActive ? 'text-white' : 'text-zinc-300') }, tName(s)),
                 perf.estimatedLevel ? h('span', {
-                  className: cls('rounded px-1.5 py-0.5 text-[9px] font-bold border', perf.provisional ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'),
+                  className: cls('rounded px-1.5 py-0.5 text-[9px] font-bold tabular-nums border', levelBadgeClasses(perf.estimatedLevel, perf.provisional)),
                   title: perf.provisional ? t('stats.provisional') + ' — ' + t('stats.coverageIncomplete', { scored: perf.scoredPaperTypes, total: perf.totalPaperTypes }) : null
                 }, perf.provisional ? '~' + perf.estimatedLevel : perf.estimatedLevel) : null,
                 h('span', { className: 'text-[10px] tabular-nums text-zinc-500 shrink-0' }, p.done + '/' + p.total)),
@@ -1421,10 +1457,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
           h('button', { onClick: props.toggleTheme, className: 'flex items-center justify-center gap-1 rounded-lg border border-line bg-[#0a0a0a] py-2 text-[10px] font-medium text-zinc-300 transition hover:border-zinc-600 hover:text-white' },
             state.theme === 'oled' ? '☀️ ' + t('theme.toLight') : '🌙 ' + t('theme.toDark'))
         ),
-        h('button', { onClick: props.onSettings, className: 'w-full flex items-center justify-center gap-1.5 rounded-lg py-2 text-[11px] font-medium text-zinc-500 transition hover:text-zinc-200 hover:bg-white/5' },
-          h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', className: 'h-3.5 w-3.5' },
-            h('circle', { cx: 12, cy: 12, r: 3 }), h('path', { d: 'M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z' })),
-          t('sidebar.settings')),
         h('p', { className: 'px-2 pt-1 text-[10px] leading-relaxed text-zinc-600' }, t('sidebar.storage')),
         /* The destructive action sits below the safe actions, behind a divider. */
         h('div', { className: 'mt-2 border-t border-line pt-2' },
@@ -1438,18 +1470,57 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   }
 
   /* ============================================================
+     BOTTOM SUBJECT SWITCHER BAR (< 1024px) — minimal: name only
+     ============================================================ */
+  function BottomSubjectBar(props) {
+    var state = props.state, activeIds = props.activeIds, setActive = props.setActive;
+    var activePillRef = useRef(null);
+
+    useEffect(function () {
+      var el = activePillRef.current;
+      if (el && el.scrollIntoView) {
+        try { el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); } catch (e) {}
+      }
+    }, [state.active]);
+
+    return h('nav', {
+      'aria-label': t('sidebar.mySubjects'),
+      className: 'shrink-0 border-t border-line bg-black/95 px-2.5 pt-1.5 lg:hidden',
+      style: { paddingBottom: 'max(0.45rem, env(safe-area-inset-bottom, 0px))' }
+    },
+      h('div', { className: 'flex items-center gap-1.5 overflow-x-auto no-scrollbar' },
+        activeIds.map(function (id) {
+          var s = SUBJECTS[id];
+          if (!s) return null;
+          var isActive = state.active === id;
+          return h('button', {
+            key: id,
+            ref: isActive ? activePillRef : null,
+            type: 'button',
+            'aria-current': isActive ? 'page' : undefined,
+            onClick: function () { setActive(id); },
+            className: cls(
+              'flex min-h-[38px] shrink-0 items-center rounded-full border px-3.5 py-1.5 text-[12px] font-semibold tracking-wide transition-all duration-150',
+              isActive
+                ? 'border-indigo-500/60 bg-indigo-500/15 text-white shadow-sm shadow-indigo-500/10'
+                : 'border-line bg-[#0a0a0a] text-zinc-400 hover:border-zinc-600 hover:text-zinc-200'
+            )
+          }, s.abbr);
+        })
+      )
+    );
+  }
+
+  /* ============================================================
      DIALOG BEHAVIOR (scroll lock + focus containment)
      ============================================================ */
   var FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-  /* Shared drawer/modal behaviour: lock background scrolling and keep Tab inside.
-     Pass a ref to the element that contains the dialog's controls. */
   var dialogScrollLocks = 0;
   var dialogOriginalOverflow = '';
 
   function useDialogBehavior(containerRef) {
     useEffect(function () {
-      /* Counted so stacked dialogs only release the lock when the last one closes. */
       if (dialogScrollLocks === 0) {
         dialogOriginalOverflow = document.body.style.overflow;
         document.body.style.overflow = 'hidden';
@@ -1511,22 +1582,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     var done = !!(entry && entry.done);
     var graded = done && !entry.ungraded && !!entry.score;
     var attempted = done && !graded;
-    /* A left-over score on a not-done paper stays visible, so un-toggling never hides
-       (and then silently resurrects) logged data. */
     var leftoverScore = !done && !!(entry && entry.score);
-    /* Re-toggling a paper that still holds a score restores a graded attempt, not an
-       ungraded one, so the toggle's label must say that. */
     var willBecomeGraded = !done && !!(entry && entry.score) && !entry.ungraded;
     var status = done
       ? (graded ? entry.score : t('chip.attempted'))
       : (leftoverScore ? entry.score + ' ' + t('chip.notDone') : '');
     var statusTone = graded ? 'text-emerald-400/90' : attempted ? 'text-emerald-500/70' : 'text-amber-400/80';
     var hasTime = entry && entry.timeSpent !== undefined && entry.timeSpent !== null && entry.timeSpent > 0;
-    /* Full subject + paper + status, so the name is unambiguous when announced alone. */
+    var hasRedoNote = !!(entry && notesHasPreset(entry.notes, 'preset.redo'));
     var chipLabel = [subjectName, tName(paper), status].filter(Boolean).join(' · ');
 
-    /* Non-interactive wrapper: the checkbox and the paper label are separate buttons,
-       so no control nests another interactive control. */
     return h('div', Object.assign({
       role: 'group',
       'aria-label': chipLabel,
@@ -1540,7 +1605,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
           ? t('chip.markNotAttempted')
           : (willBecomeGraded ? t('chip.restoreGraded') : t('chip.quickMark')),
         onClick: onToggle,
-        /* The hit area grows to 44px on touch while the visual box stays small. */
         className: 'dse-chip-toggle relative grid shrink-0 place-items-center rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60'
       }, h('span', {
         'aria-hidden': 'true',
@@ -1554,10 +1618,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   className: 'flex min-h-[33px] min-w-0 flex-1 flex-col justify-center rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 sm:min-h-0'
 },
   h('div', { className: cls('text-[13px] font-semibold leading-tight whitespace-nowrap sm:text-[14px]', done ? 'text-emerald-300' : 'text-zinc-300') }, paper.short),
-  status ? h('div', { className: cls('text-[11px] leading-tight mt-0.5 truncate sm:text-[12px]', statusTone) }, status) : null
+  status ? h('div', { className: cls('text-[11px] leading-tight mt-0.5 truncate tabular-nums sm:text-[12px]', statusTone) }, status) : null
 ),
-      hasTime ? h('span', { className: 'text-[10px] font-mono text-zinc-500 shrink-0 hidden sm:inline' }, entry.timeSpent + 'm') : null,
-      entry && entry.notes ? h('span', { className: 'hidden sm:block h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400', title: 'Has notes' }) : null
+      hasTime ? h('span', { className: 'text-[10px] font-mono tabular-nums text-zinc-500 shrink-0 hidden sm:inline' }, entry.timeSpent + 'm') : null,
+      hasRedoNote ? h('span', { className: 'h-1.5 w-1.5 shrink-0 rounded-full bg-rose-400', title: t('panel.filterRedo') }) : null,
+      (entry && entry.notes && !hasRedoNote) ? h('span', { className: 'h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400', title: t('chip.hasNotes') }) : null
     );
   }
 
@@ -1566,30 +1631,41 @@ input[type="date"]::-webkit-calendar-picker-indicator {
      ============================================================ */
   function SubjectPanel(props) {
     var state = props.state, activeId = props.activeId;
-    /* Everything below uses the id the panel actually renders, so a stale state.active
-       can never render one subject while looking entries up under another. */
     var safeActiveId = SUBJECTS[activeId] ? activeId : 'eng';
     var subj = SUBJECTS[safeActiveId];
     var prog = subjectProgress(safeActiveId, state);
 
     var papersByRow = useMemo(function () {
-      var map = {}; 
+      var map = {};
       if (!subj || !subj.rows) return map;
-      subj.rows.forEach(function (r) { map[r] = subj.papersFor(r, state); }); 
+      subj.rows.forEach(function (r) { map[r] = subj.papersFor(r, { bafsOption: state.bafsOption, vaOption: state.vaOption }); });
       return map;
-    }, [safeActiveId, state.bafsOption, state.vaOption, state.entries]);
+    }, [safeActiveId, state.bafsOption, state.vaOption]);
 
     var maxCols = 1; subj.rows.forEach(function (r) { if (papersByRow[r].length > maxCols) maxCols = papersByRow[r].length; });
 
     var legendMap = {}; subj.rows.forEach(function (r) { papersByRow[r].forEach(function (p) { if (!legendMap[p.id]) legendMap[p.id] = p; }); });
     var legend = Object.keys(legendMap).map(function (k) { return legendMap[k]; });
 
-    var attemptedCount = 0;
-    Object.keys(state.entries).forEach(function (k) { if (k.indexOf(safeActiveId + '|') !== 0) return; var e = state.entries[k]; if (e.done && (e.ungraded || !e.score)) attemptedCount++; });
+    var attemptedCount = useMemo(function () {
+      var count = 0;
+      var prefix = safeActiveId + '|';
+      Object.keys(state.entries).forEach(function (k) {
+        if (k.indexOf(prefix) !== 0) return;
+        var e = state.entries[k];
+        if (e && e.done && (e.ungraded || !e.score)) count++;
+      });
+      return count;
+    }, [safeActiveId, state.entries]);
 
     var filteredRows = subj.rows.filter(function (r) {
       if (state.filterMode === 'all') return true;
       var papers = papersByRow[r];
+      if (state.filterMode === 'redo') {
+        return papers.some(function (p) {
+          return paperNeedsRedo(subj, p.id, state.entries[ek(safeActiveId, r, p.id)], state);
+        });
+      }
       var hasDone = papers.some(function (p) { var e = state.entries[ek(safeActiveId, r, p.id)]; return e && e.done; });
       var hasPending = papers.some(function (p) { var e = state.entries[ek(safeActiveId, r, p.id)]; return !e || !e.done; });
       return state.filterMode === 'done' ? hasDone : hasPending;
@@ -1639,11 +1715,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     }
 
     var primary = tName(subj);
+    var targetLevels = ['5**', '5*', '5', '4', '3'];
 
     return h('div', { className: 'flex flex-col min-h-full' },
       h('header', { className: 'sticky top-0 z-20 border-b border-line dse-safe-pt' },
-        /* The blur lives on an inert inset child: a filter on the sticky element itself
-           promotes it to a compositing layer on mobile WebKit (ghosting, wrong stacking). */
         h('div', { 'aria-hidden': 'true', className: 'dse-header-blur pointer-events-none absolute inset-0 -z-10 bg-black/85 backdrop-blur-xl' }),
         h('div', { className: 'relative px-3 pb-2 pt-1.5 sm:px-6 sm:py-3 lg:px-8' },
           h('div', { className: 'flex items-center justify-between gap-2 sm:gap-3' },
@@ -1660,8 +1735,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                 h('span', { className: 'text-[10px] uppercase tracking-[0.16em] text-zinc-600' }, subj.abbr)),
               h('h1', { className: 'mt-0.5 truncate text-[15px] font-semibold tracking-tight text-white sm:mt-1 sm:text-xl' }, primary)),
             h('div', { className: 'flex shrink-0 items-center gap-1.5' },
-              h('div', { className: 'text-right leading-tight' },
-                h('div', { className: 'text-[12px] font-bold text-emerald-400' }, prog.pct + '%'),
+              h('div', { className: 'text-right leading-tight tabular-nums' },
+                h('div', { className: 'text-[12px] font-bold text-emerald-400' },
+                  h('span', { className: 'mr-1.5 font-medium text-zinc-400 sm:hidden' }, prog.done + '/' + prog.total),
+                  prog.pct + '%'),
                 h('div', { className: 'hidden text-[10px] font-medium text-zinc-300 whitespace-nowrap sm:block' },
                   h('span', { className: 'font-bold text-white' }, String(prog.done)), ' / ' + prog.total + ' ' + t('panel.completed')),
                 attemptedCount > 0 ? h('div', { className: 'hidden text-[10px] text-amber-400/90 whitespace-nowrap sm:block' }, attemptedCount + ' ' + t('panel.attempted')) : null),
@@ -1699,47 +1776,120 @@ input[type="date"]::-webkit-calendar-picker-indicator {
               return h('span', Object.assign({ key: p.id, className: 'inline-flex items-center gap-1.5 rounded-md border border-line bg-[#0a0a0a] px-1.5 py-0.5 text-[10px] text-zinc-400' }, props.tipProps(tName(p) + (w ? ' (' + w + '% weight · ' + p.officialTime + 'm)' : ' (' + p.officialTime + 'm)'))),
                 h('span', { className: 'font-semibold text-zinc-300' }, p.short),
                 h('span', { className: 'hidden sm:inline text-zinc-400' }, tName(p)),
-                w ? h('span', { className: 'rounded bg-indigo-500/15 px-1 py-0.2 text-[9px] font-semibold text-indigo-300 border border-indigo-500/20' }, w + '%') : null
+                w ? h('span', { className: 'rounded bg-indigo-500/15 px-1 py-0.2 text-[9px] font-semibold tabular-nums text-indigo-300 border border-indigo-500/20' }, w + '%') : null
               );
             })),
-          h('div', { className: 'flex items-center gap-0.5 rounded-lg border border-line bg-[#0a0a0a] p-0.5 text-[10px]' },
-            ['all','done','pending'].map(function(f) {
-              return h('button', { key: f, onClick: function() { props.setState(function(s){ var n = Object.assign({}, s); n.filterMode = f; return n; }); },
-                className: cls('min-h-[26px] rounded px-2 py-1 font-medium transition', state.filterMode === f ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-zinc-300') },
-                t(f === 'all' ? 'panel.filterAll' : f === 'done' ? 'panel.filterDone' : 'panel.filterPending'));
-            }),
-            h('span', { className: 'h-3 w-[1px] bg-line/80 mx-0' }),
-            h('select', { value: state.sortMode, onChange: function(e) { var val = e.target.value; props.setState(function(s){ var n = Object.assign({}, s); n.sortMode = val; return n; }); },
-              className: 'sort-select min-h-[26px] cursor-pointer bg-transparent pr-1.5 text-[11px] font-medium text-zinc-300 outline-none hover:text-white' },
-              h('option', { value: 'chrono', className: 'bg-[#0a0a0a] text-zinc-300' }, t('panel.sortChrono')),
-              h('option', { value: 'completion', className: 'bg-[#0a0a0a] text-zinc-300' }, t('panel.sortCompletion')),
-              h('option', { value: 'score', className: 'bg-[#0a0a0a] text-zinc-300' }, t('panel.sortScore')),
-              h('option', { value: 'time', className: 'bg-[#0a0a0a] text-zinc-300' }, t('panel.sortTime'))
+            h('div', { className: 'flex flex-wrap items-center gap-1 rounded-lg border border-line bg-[#0a0a0a] p-0.5 text-[10px]' },
+            h('select', {
+              value: state.filterMode,
+              'aria-label': t('panel.filterLabel'),
+              onChange: function (e) {
+                var val = e.target.value;
+                props.setState(function (s) {
+                  var n = Object.assign({}, s);
+                  n.filterMode = val;
+                  return n;
+                });
+              },
+              className: cls(
+                'sort-select min-h-[26px] cursor-pointer rounded bg-transparent px-1.5 text-[11px] font-medium outline-none transition',
+                state.filterMode === 'redo'
+                  ? 'text-rose-300 hover:text-rose-200'
+                  : 'text-zinc-300 hover:text-white'
+              )
+            },
+              h('option', { value: 'all', className: 'bg-[#0a0a0a] text-zinc-300' }, t('panel.filterLabel') + ': ' + t('panel.filterAll')),
+              h('option', { value: 'done', className: 'bg-[#0a0a0a] text-zinc-300' }, t('panel.filterLabel') + ': ' + t('panel.filterDone')),
+              h('option', { value: 'pending', className: 'bg-[#0a0a0a] text-zinc-300' }, t('panel.filterLabel') + ': ' + t('panel.filterPending')),
+              h('option', { value: 'redo', className: 'bg-[#0a0a0a] text-zinc-300' }, t('panel.filterLabel') + ': ' + t('panel.filterRedo'))
+            ),
+            state.filterMode === 'redo' ? h('select', {
+              value: state.targetLevel || '4',
+              'aria-label': 'Target Level',
+              onChange: function (e) {
+                var val = e.target.value;
+                props.setState(function (s) {
+                  var n = Object.assign({}, s);
+                  n.targetLevel = val;
+                  return n;
+                });
+              },
+              className: 'sort-select min-h-[26px] cursor-pointer rounded bg-rose-500/10 px-1.5 text-[11px] font-semibold tabular-nums text-rose-300 outline-none hover:text-white'
+            }, targetLevels.map(function (lvl) {
+              return h('option', { key: lvl, value: lvl, className: 'bg-[#0a0a0a] text-zinc-300' }, t('panel.targetLabel', { lvl: lvl }));
+            })) : null,
+            h('span', { className: 'h-3 w-[1px] bg-line/80 mx-0.5' }),
+            h('select', {
+              value: state.sortMode,
+              'aria-label': t('panel.sortLabel'),
+              onChange: function (e) {
+                var val = e.target.value;
+                props.setState(function (s) {
+                  var n = Object.assign({}, s);
+                  n.sortMode = val;
+                  return n;
+                });
+              },
+              className: 'sort-select min-h-[26px] cursor-pointer bg-transparent px-1.5 text-[11px] font-medium text-zinc-300 outline-none hover:text-white'
+            },
+              h('option', { value: 'chrono', className: 'bg-[#0a0a0a] text-zinc-300' }, t('panel.sortLabel') + ': ' + t('panel.sortChrono')),
+              h('option', { value: 'completion', className: 'bg-[#0a0a0a] text-zinc-300' }, t('panel.sortLabel') + ': ' + t('panel.sortCompletion')),
+              h('option', { value: 'score', className: 'bg-[#0a0a0a] text-zinc-300' }, t('panel.sortLabel') + ': ' + t('panel.sortScore')),
+              h('option', { value: 'time', className: 'bg-[#0a0a0a] text-zinc-300' }, t('panel.sortLabel') + ': ' + t('panel.sortTime'))
             ))),
         h('div', { className: 'overflow-hidden rounded-2xl border border-line bg-[#0a0a0a]' },
-          sortedRows.map(function (row, idx) {
+        sortedRows.length === 0
+        ? h('div', { className: 'flex flex-col items-center justify-center gap-2.5 px-4 py-12 text-center' },
+            h('p', { className: 'text-[13px] font-medium text-zinc-400' },
+              (state.filterMode === 'done' ? t('panel.filterDone')
+                : state.filterMode === 'pending' ? t('panel.filterPending')
+                : state.filterMode === 'redo' ? t('panel.filterRedo')
+                : t('panel.filterAll')) + ': 0'),
+            h('button', {
+              type: 'button',
+              onClick: function () { props.setState(function (s) { return Object.assign({}, s, { filterMode: 'all' }); }); },
+              className: 'rounded-lg border border-line px-3 py-1.5 text-[11px] font-medium text-zinc-300 transition hover:border-zinc-600 hover:text-white'
+            }, t('panel.filterAll')))
+            : sortedRows.map(function (row, idx) {
             var papers = papersByRow[row];
             var doneCount = papers.filter(function (p) { var e = state.entries[ek(safeActiveId, row, p.id)]; return e && e.done; }).length;
             var allDone = doneCount === papers.length;
             var isSpecial = row === 'SP' || row === 'PP';
+            var isSinglePaper = papers.length === 1;
             return h('div', { key: row, className: cls('border-b border-line/60 px-2.5 py-2 sm:px-4 sm:py-2.5 transition-colors last:border-0', allDone ? 'bg-emerald-500/[0.03]' : 'hover:bg-white/[0.015]', idx === 0 ? 'bg-white/[0.02]' : '') },
               h('div', { className: 'sm:flex sm:items-center sm:gap-3' },
                 h('div', { className: 'mb-1.5 flex items-center gap-2 sm:mb-0 sm:w-[88px] sm:shrink-0 sm:block' },
-                  h('div', { className: cls('text-[13px] font-semibold leading-tight', isSpecial ? 'text-indigo-300' : 'text-zinc-200') }, rowLabel(row)),
+                  h('div', { className: cls('text-[13px] font-semibold leading-tight tabular-nums', isSpecial ? 'text-indigo-300' : 'text-zinc-200') }, rowLabel(row)),
                   h('div', { className: 'text-[9px] uppercase tracking-[0.12em] text-zinc-600 leading-tight' }, rowSub(row))),
-                /* Two columns on phones keep the chip labels whole; wider screens restore the full row. */
                 h('div', { className: 'grid flex-1 gap-1.5 sm:gap-2 ' + (maxCols >= 4 ? 'grid-cols-2 sm:grid-cols-4' : maxCols === 3 ? 'grid-cols-2 sm:grid-cols-3' : maxCols === 2 ? 'grid-cols-2' : 'grid-cols-1') },
                   papers.map(function (p) {
-                    /* 1 / -1 spans every column of the current grid, whatever the breakpoint. */
-                    var spanStyle = papers.length === 1 ? { gridColumn: '1 / -1' } : undefined;
-                    return h('div', { key: p.id, style: spanStyle },
-                      h(Chip, { subjectName: tName(subj), paper: p, entry: state.entries[ek(safeActiveId, row, p.id)], tipProps: props.tipProps,
+                    var entry = state.entries[ek(safeActiveId, row, p.id)];
+                    if (isSinglePaper) {
+                      var hasInlineMeta = !!(entry && (entry.completedDate || entry.notes));
+                      return h('div', { key: p.id, style: { gridColumn: '1 / -1' }, className: 'flex min-w-0 flex-col sm:flex-row sm:items-center sm:gap-3' },
+                        h('div', { className: 'w-full sm:w-[240px] sm:shrink-0' },
+                          h(Chip, { subjectName: tName(subj), paper: p, entry: entry, tipProps: props.tipProps,
+                            onOpen: function () { props.openDrawer(safeActiveId, row, p.id); },
+                            onToggle: function () { props.toggleEntry(safeActiveId, row, p.id); } })),
+                        hasInlineMeta ? h('button', {
+                          type: 'button',
+                          onClick: function () { props.openDrawer(safeActiveId, row, p.id); },
+                          className: 'hidden sm:flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-left transition hover:bg-white/[0.03]'
+                        },
+                          entry.completedDate ? h('span', { className: 'shrink-0 rounded border border-line bg-black/50 px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-zinc-400' }, entry.completedDate) : null,
+                          entry.notes ? h('span', { className: 'min-w-0 truncate text-[11.5px] text-zinc-400' }, entry.notes.replace(/\s+/g, ' ')) : null
+                        ) : null
+                      );
+                    }
+                    return h('div', { key: p.id },
+                      h(Chip, { subjectName: tName(subj), paper: p, entry: entry, tipProps: props.tipProps,
                         onOpen: function () { props.openDrawer(safeActiveId, row, p.id); },
                         onToggle: function () { props.toggleEntry(safeActiveId, row, p.id); } }));
                   })),
                 h('div', { className: cls('hidden sm:block w-10 shrink-0 text-right text-[10px] tabular-nums', allDone ? 'text-emerald-400' : 'text-zinc-600') }, doneCount + '/' + papers.length)));
           })),
-        h('p', { className: 'mt-4 text-center text-[10px] text-zinc-600' }, t('panel.footer'))));
+        (subj.note || subj.noteZh) ? h('p', { className: 'mt-3 text-center text-[11px] text-zinc-500' }, _lang === 'zh' && subj.noteZh ? subj.noteZh : subj.note) : null,
+        h('p', { className: 'mt-2 text-center text-[10px] text-zinc-600' }, t('panel.footer'))));
   }
 
   /* ============================================================
@@ -1747,6 +1897,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
      ============================================================ */
   function Drawer(props) {
     var subject = props.subject, paper = props.paper, row = props.row, entry = props.entry, onClose = props.onClose, onSave = props.onSave, onClear = props.onClear, customCutoffs = props.customCutoffs;
+    var onStepPrev = props.onStepPrev, onStepNext = props.onStepNext;
     
     var _done = useState(entry ? !!entry.done : true); var done = _done[0], setDone = _done[1];
     var _un = useState(entry ? !!entry.ungraded : false); var ungraded = _un[0], setUngraded = _un[1];
@@ -1761,17 +1912,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
     var scoreInputRef = useRef(null);
     var panelRef = useRef(null);
+    var touchStartYRef = useRef(null);
     useDialogBehavior(panelRef);
 
-    useEffect(function () { 
-      var onKey = function (e) { if (e.key === 'Escape') onClose(); }; 
-      window.addEventListener('keydown', onKey); 
-      return function () { window.removeEventListener('keydown', onKey); }; 
-    }, [onClose]);
-
     useEffect(function () {
-      /* Touch keyboards must not pop up before the sheet settles, and a field that is
-         disabled because the paper is not done must never take focus. */
       if (!done) return;
       var coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
       if (coarse) return;
@@ -1786,8 +1930,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     var handleSave = function () {
       var trimmedScore = String(score).trim();
 
-      /* Validate before saving so an unusable score is never stored as if it counted. */
-      var scoreErr = trimmedScore && !ungraded ? getScoreError(trimmedScore, officialTotal) : null;
+      var scoreErr = done && trimmedScore && !ungraded ? getScoreError(trimmedScore, officialTotal) : null;
       if (scoreErr) {
         setScoreError(scoreErr);
         if (scoreInputRef.current && scoreInputRef.current.focus) scoreInputRef.current.focus();
@@ -1800,7 +1943,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         ? Math.floor(timeValue)
         : 0;
 
-      /* A completion date in the future (or an impossible date) is rejected, not stored. */
       var trimmedDate = String(completedDate).trim();
       if (done && trimmedDate && !isValidDateString(trimmedDate)) {
         setDateError(true);
@@ -1812,8 +1954,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         ? trimmedDate
         : getLocalDateStr();
 
-      /* A done paper with no score is an ungraded attempt; otherwise the chip claims
-         "attempted" while the entry says it was graded. */
       var finalUngraded = !!done && (!!ungraded || !trimmedScore);
 
       onSave({
@@ -1826,6 +1966,62 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       });
     };
 
+    var handleSaveRef = useRef(handleSave);
+    handleSaveRef.current = handleSave;
+    var onStepPrevRef = useRef(onStepPrev);
+    onStepPrevRef.current = onStepPrev;
+    var onStepNextRef = useRef(onStepNext);
+    onStepNextRef.current = onStepNext;
+
+    useEffect(function () {
+      var onKey = function (e) {
+        if (e.key === 'Escape') {
+          onClose();
+          return;
+        }
+        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+          e.preventDefault();
+          handleSaveRef.current();
+          return;
+        }
+        var tag = e.target && e.target.tagName;
+        var isTyping = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target && e.target.isContentEditable);
+        if (!isTyping && !e.metaKey && !e.ctrlKey && !e.altKey) {
+          if (e.key === '[' && onStepPrevRef.current) {
+            e.preventDefault();
+            onStepPrevRef.current();
+          } else if (e.key === ']' && onStepNextRef.current) {
+            e.preventDefault();
+            onStepNextRef.current();
+          }
+        }
+      };
+      window.addEventListener('keydown', onKey);
+      return function () { window.removeEventListener('keydown', onKey); };
+    }, [onClose]);
+
+    var presetKeys = ['preset.finishedA', 'preset.outOfTimeB', 'preset.mcCareless', 'preset.redo'];
+    if (subject.id === 'math' || subject.id === 'm1' || subject.id === 'm2') {
+      presetKeys.splice(2, 0, 'preset.trig');
+    }
+
+    var togglePreset = function (phrase) {
+      setNotes(function (prev) {
+        var current = String(prev || '');
+        var lines = current.split('\n');
+        var idx = -1;
+        for (var i = 0; i < lines.length; i++) {
+          if (lines[i].trim() === phrase) { idx = i; break; }
+        }
+        if (idx >= 0) {
+          lines.splice(idx, 1);
+          return lines.join('\n').trim();
+        }
+        var trimmed = current.trim();
+        return trimmed ? (trimmed + '\n' + phrase) : phrase;
+      });
+    };
+
     var parsedScore = parsePaperScore(score, officialTotal);
     var estimatedLevel = null;
 
@@ -1833,25 +2029,59 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       estimatedLevel = estimateLevel(parsedScore.pct, subject.id, customCutoffs);
     }
 
-    var timeSpentNum = parseInt(timeSpent, 10);
-    var timeDiff = !isNaN(timeSpentNum) && paper.officialTime ? (timeSpentNum - paper.officialTime) : null;
+    var timeSpentNum = Number(timeSpent);
+    var hasValidTime = String(timeSpent).trim() !== '' && isFinite(timeSpentNum) && timeSpentNum >= 0;
+    var timeDiff = hasValidTime && paper.officialTime ? (Math.floor(timeSpentNum) - paper.officialTime) : null;
 
     return h('div', { className: 'fixed inset-0 z-50' },
       h('div', { className: 'absolute inset-0 bg-black/70 backdrop-blur-sm anim-fade', onClick: onClose }),
-      h('div', { ref: panelRef, className: 'absolute right-0 top-0 flex h-full w-full max-w-full flex-col overflow-x-hidden border-l border-line bg-black shadow-2xl anim-slide sm:w-[460px] dse-safe' },
-        h('div', { className: 'flex items-start justify-between gap-3 border-b border-line px-5 py-4' },
-          h('div', { className: 'min-w-0' },
-            h('div', { className: 'text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500' }, tName(subject) + ' · ' + rowLabel(row)),
-            h('h2', { className: 'mt-1 truncate text-[15px] font-semibold text-white' }, tName(paper))),
-          h('button', { onClick: onClose, className: 'grid h-11 w-11 shrink-0 place-items-center rounded-lg text-zinc-500 transition hover:bg-white/5 hover:text-zinc-200', 'aria-label': t('drawer.close') },
-            h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, className: 'h-4 w-4' }, h('path', { d: 'M6 6l12 12M18 6L6 18' })))),
-        h('div', { className: 'flex-1 space-y-5 overflow-y-auto px-5 py-5 dse-scroll' },
+      h('div', {
+        ref: panelRef,
+        role: 'dialog',
+        'aria-modal': 'true',
+        'aria-labelledby': 'drawer-title',
+        className: 'fixed inset-x-0 bottom-0 flex max-h-[90dvh] w-full max-w-full flex-col overflow-x-hidden rounded-t-2xl border-t border-line bg-black shadow-2xl anim-drawer sm:inset-x-auto sm:right-0 sm:top-0 sm:h-full sm:max-h-none sm:w-[460px] sm:rounded-none sm:border-t-0 sm:border-l sm:dse-safe'
+      },
+        h('div', {
+          className: 'flex justify-center pt-2.5 pb-1 sm:hidden',
+          onTouchStart: function (e) { if (e.touches && e.touches[0]) touchStartYRef.current = e.touches[0].clientY; },
+          onTouchEnd: function (e) {
+            if (touchStartYRef.current !== null && e.changedTouches && e.changedTouches[0]) {
+              if (e.changedTouches[0].clientY - touchStartYRef.current > 56) onClose();
+            }
+            touchStartYRef.current = null;
+          }
+        }, h('div', { className: 'h-1 w-10 rounded-full bg-zinc-700' })),
+        h('div', { className: 'flex items-start justify-between gap-2 border-b border-line px-5 py-3 sm:py-4' },
+          h('div', { className: 'min-w-0 flex-1' },
+            h('div', { className: 'text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500 tabular-nums' }, tName(subject) + ' · ' + rowLabel(row)),
+            h('h2', { id: 'drawer-title', className: 'mt-1 truncate text-[15px] font-semibold text-white' }, tName(paper))),
+          h('div', { className: 'flex shrink-0 items-center gap-1' },
+            h('button', {
+              type: 'button',
+              disabled: !onStepPrev,
+              onClick: onStepPrev || undefined,
+              title: t('drawer.prevPaper'),
+              'aria-label': t('drawer.prevPaper'),
+              className: 'hidden sm:grid h-9 w-9 place-items-center rounded-lg border border-line text-zinc-400 transition hover:border-zinc-600 hover:text-white disabled:opacity-30 disabled:pointer-events-none'
+            }, h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', className: 'h-3.5 w-3.5' }, h('path', { d: 'M15 18l-6-6 6-6' }))),
+            h('button', {
+              type: 'button',
+              disabled: !onStepNext,
+              onClick: onStepNext || undefined,
+              title: t('drawer.nextPaper'),
+              'aria-label': t('drawer.nextPaper'),
+              className: 'hidden sm:grid h-9 w-9 place-items-center rounded-lg border border-line text-zinc-400 transition hover:border-zinc-600 hover:text-white disabled:opacity-30 disabled:pointer-events-none'
+            }, h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', className: 'h-3.5 w-3.5' }, h('path', { d: 'M9 18l6-6-6-6' }))),
+            h('button', { onClick: onClose, className: 'grid h-10 w-10 sm:h-9 sm:w-9 shrink-0 place-items-center rounded-lg text-zinc-500 transition hover:bg-white/5 hover:text-zinc-200', 'aria-label': t('drawer.close') },
+              h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, className: 'h-4 w-4' }, h('path', { d: 'M6 6l12 12M18 6L6 18' }))))),
+        h('div', { className: 'flex-1 space-y-4 sm:space-y-5 overflow-y-auto px-5 py-4 sm:py-5 dse-scroll' },
           h('div', { className: 'flex items-center justify-between rounded-xl border border-line bg-[#0a0a0a] px-4 py-3' },
             h('div', null,
               h('div', { className: 'text-[13px] font-medium text-zinc-200' }, t('drawer.completed'))),
             h(Switch, { checked: done, onChange: setDone })),
           h('div', { className: done ? '' : 'opacity-40' },
-            h('label', { className: 'mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500' }, t('drawer.score', { max: officialTotal })),
+            h('label', { className: 'mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500 tabular-nums' }, t('drawer.score', { max: officialTotal })),
             h('div', { className: 'relative' },
               h('input', { 
                 ref: scoreInputRef, 
@@ -1864,14 +2094,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                   setScoreError(null);
                   if (val.trim() !== '') setUngraded(false);
                 }, 
-                placeholder: t('drawer.scorePlaceholder'), 
+                placeholder: t('drawer.scorePlaceholder', { max: officialTotal }), 
                 'aria-invalid': scoreError ? 'true' : 'false',
-                className: cls('w-full rounded-lg border bg-[#0a0a0a] px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-600 outline-none transition focus:ring-2', scoreError ? 'border-red-500/60 focus:border-red-500/60 focus:ring-red-500/20' : 'border-line focus:border-indigo-500/60 focus:ring-indigo-500/20') 
+                className: cls('w-full rounded-lg border bg-[#0a0a0a] px-3 py-2.5 text-sm tabular-nums text-zinc-100 placeholder-zinc-600 outline-none transition focus:ring-2', scoreError ? 'border-red-500/60 focus:border-red-500/60 focus:ring-red-500/20' : 'border-line focus:border-indigo-500/60 focus:ring-indigo-500/20') 
               }),
-              (score && !ungraded && parsedScore) ? h('span', { className: 'absolute right-2.5 top-1/2 -translate-y-1/2 rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-400' }, Math.round(parsedScore.pct) + '%') : null),
+              (score && !ungraded && parsedScore) ? h('span', { className: 'absolute right-2.5 top-1/2 -translate-y-1/2 rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-emerald-400' }, Math.round(parsedScore.pct) + '%') : null),
             scoreError ? h('p', { role: 'alert', className: 'mt-1.5 text-[11px] font-medium leading-snug text-red-400' }, t('drawer.scoreError.' + scoreError, { max: officialTotal })) : null,
             (!scoreError && done && !ungraded && !String(score).trim()) ? h('p', { className: 'mt-1.5 text-[10px] leading-snug text-amber-400/80' }, t('drawer.noScoreHint')) : null,
-            estimatedLevel ? h('div', { className: 'mt-2 rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-3 py-2 text-[11px] text-indigo-200' }, t('drawer.estLevel') + ' ', h('span', { className: 'font-semibold text-indigo-300 text-sm' }, estimatedLevel)) : null,
+            estimatedLevel ? h('div', { className: cls('mt-2 flex items-center justify-between rounded-lg border px-3 py-2 text-[11px]', levelBadgeClasses(estimatedLevel, false)) },
+              h('span', null, t('drawer.estLevel')),
+              h('span', { className: 'font-bold text-sm tabular-nums' }, estimatedLevel)) : null,
             h('label', { className: 'mt-2.5 flex cursor-pointer items-center gap-2 text-[12px] text-zinc-400 select-none' },
               h('input', { 
                 type: 'checkbox', 
@@ -1896,25 +2128,48 @@ input[type="date"]::-webkit-calendar-picker-indicator {
               max: getLocalDateStr(),
               'aria-invalid': dateError ? 'true' : 'false',
               onChange: function (e) { setCompletedDate(e.target.value); setDateError(false); }, 
-              className: cls('w-full rounded-lg border bg-[#0a0a0a] px-3 py-2.5 text-sm text-zinc-100 outline-none transition focus:ring-2 disabled:cursor-not-allowed disabled:opacity-40 [color-scheme:dark]', dateError ? 'border-red-500/60 focus:border-red-500/60 focus:ring-red-500/20' : 'border-line focus:border-indigo-500/60 focus:ring-indigo-500/20') 
+              className: cls('w-full rounded-lg border bg-[#0a0a0a] px-3 py-2.5 text-sm tabular-nums text-zinc-100 outline-none transition focus:ring-2 disabled:cursor-not-allowed disabled:opacity-40', dateError ? 'border-red-500/60 focus:border-red-500/60 focus:ring-red-500/20' : 'border-line focus:border-indigo-500/60 focus:ring-indigo-500/20') 
             }),
             dateError ? h('p', { role: 'alert', className: 'mt-1.5 text-[11px] font-medium leading-snug text-red-400' }, t('drawer.dateError')) : null),
-
 
           h('div', { className: done ? '' : 'opacity-40' },
             h('div', { className: 'flex justify-between items-center mb-1.5' },
               h('label', { className: 'text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500' }, t('drawer.timeSpent')),
-              paper.officialTime ? h('span', { className: 'text-[10px] text-zinc-500' }, t('drawer.officialTime', { m: paper.officialTime })) : null),
-            h('input', { type: 'number', min: '0', disabled: !done, inputMode: 'numeric', value: timeSpent, onChange: function (e) { setTimeSpent(e.target.value); }, placeholder: t('drawer.timePlaceholder'), className: 'w-full rounded-lg border border-line bg-[#0a0a0a] px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-600 outline-none transition focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/20 disabled:cursor-not-allowed disabled:opacity-40' }),
-            timeDiff !== null ? h('div', { className: cls('mt-1.5 text-[11px] font-medium', timeDiff > 0 ? 'text-amber-400' : 'text-emerald-400') }, timeDiff > 0 ? t('drawer.overtime', { m: timeDiff }) : t('drawer.savedTime', { m: Math.abs(timeDiff) })) : null),
+              paper.officialTime ? h('span', { className: 'text-[10px] tabular-nums text-zinc-500' }, t('drawer.officialTime', { m: paper.officialTime })) : null),
+            h('input', { type: 'number', min: '0', disabled: !done, inputMode: 'numeric', value: timeSpent, onChange: function (e) { setTimeSpent(e.target.value); }, placeholder: t('drawer.timePlaceholder'), className: 'w-full rounded-lg border border-line bg-[#0a0a0a] px-3 py-2.5 text-sm tabular-nums text-zinc-100 placeholder-zinc-600 outline-none transition focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/20 disabled:cursor-not-allowed disabled:opacity-40' }),
+            timeDiff !== null ? h('div', { className: cls('mt-1.5 text-[11px] font-medium tabular-nums', timeDiff > 0 ? 'text-amber-400' : 'text-emerald-400') }, timeDiff > 0 ? t('drawer.overtime', { m: timeDiff }) : t('drawer.savedTime', { m: Math.abs(timeDiff) })) : null),
           h('div', { className: done ? '' : 'opacity-40' },
             h('label', { className: 'mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500' }, t('drawer.notes')),
-            h('textarea', { value: notes, disabled: !done, onChange: function (e) { setNotes(e.target.value); }, rows: 4, placeholder: t('drawer.notesPlaceholder'), className: 'w-full resize-none rounded-lg border border-line bg-[#0a0a0a] px-3 py-2.5 text-[13px] leading-relaxed text-zinc-100 placeholder-zinc-600 outline-none transition focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/20' }))),
-        h('div', { className: 'flex items-center gap-2 border-t border-line px-5 py-4' },
+            h('div', { className: 'mb-2 flex flex-wrap gap-1.5' },
+               presetKeys.map(function (pkey) {
+                var phrase = t(pkey);
+                var isSelected = notesHasPreset(notes, pkey);
+                return h('button', {
+                  key: pkey,
+                  type: 'button',
+                  disabled: !done,
+                  'aria-pressed': isSelected,
+                  onClick: function () { togglePreset(phrase); },
+                  className: cls(
+                    'rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all disabled:pointer-events-none',
+                    isSelected
+                      ? 'border-indigo-500/60 bg-indigo-500/15 text-indigo-200'
+                      : 'border-line bg-[#0a0a0a] text-zinc-400 hover:border-zinc-600 hover:text-zinc-200'
+                  )
+                }, (isSelected ? '✓ ' : '+ ') + phrase);
+              })
+            ),
+            h('textarea', { value: notes, disabled: !done, onChange: function (e) { setNotes(e.target.value); }, rows: 3, placeholder: t('drawer.notesPlaceholder'), className: 'w-full resize-none rounded-lg border border-line bg-[#0a0a0a] px-3 py-2.5 text-[13px] leading-relaxed text-zinc-100 placeholder-zinc-600 outline-none transition focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/20' }))),
+        h('div', {
+          className: 'flex items-center gap-2 border-t border-line px-5 pt-3 sm:py-4',
+          style: { paddingBottom: 'max(0.875rem, env(safe-area-inset-bottom, 0px))' }
+        },
           h('button', { onClick: onClear, className: 'rounded-lg px-2.5 py-2 text-[12px] font-medium text-zinc-500 transition hover:bg-red-500/10 hover:text-red-400' }, t('drawer.clear')),
           h('div', { className: 'flex-1' }),
           h('button', { onClick: onClose, className: 'rounded-lg border border-line px-3.5 py-2 text-[12px] font-medium text-zinc-300 transition hover:border-zinc-600 hover:text-white' }, t('drawer.cancel')),
-          h('button', { onClick: handleSave, className: 'rounded-lg bg-emerald-500 px-4 py-2 text-[12px] font-semibold text-[#04140d] transition hover:bg-emerald-400 active:scale-[0.98]' }, t('drawer.save')))));
+          h('button', { onClick: handleSave, className: 'inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-4 py-2 text-[12px] font-semibold text-[#04140d] transition hover:bg-emerald-400 active:scale-[0.98]' },
+            t('drawer.save'),
+            h('span', { className: 'hidden sm:inline rounded bg-black/15 px-1 py-0.2 text-[9px] font-bold tracking-tight' }, '⌘↵')))));
   }
 
   /* ============================================================
@@ -1924,6 +2179,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     var state = props.state, mode = props.mode, onClose = props.onClose, onSave = props.onSave;
     var _el = useState(state.electives.slice()); var electives = _el[0], setElectives = _el[1];
     var _bo = useState(state.bafsOption); var bafsOption = _bo[0], setBafsOption = _bo[1];
+    var _vo = useState(state.vaOption || 'p1'); var vaOption = _vo[0], setVaOption = _vo[1];
     var _w = useState(''); var warn = _w[0], setWarn = _w[1];
     var _core = useState(state.core.slice()); var coreSel = _core[0], setCoreSel = _core[1];
     var panelRef = useRef(null);
@@ -1944,7 +2200,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
           if (id === 'eng' || id === 'math' || id === 'csd') return prev;
           return prev.filter(function (x) { return x !== id; });
         }
-        return prev.concat([id]);
+        var next = prev.concat([id]);
+        return CORE_IDS.filter(function (cid) { return next.indexOf(cid) >= 0; });
       });
     };
 
@@ -1970,7 +2227,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
     var electiveCards = ELECTIVE_IDS.map(function (id) {
       var s = SUBJECTS[id]; var selected = electives.indexOf(id) >= 0;
-      var papers = s.papersFor('2026', { bafsOption: bafsOption }).map(function (p) { return p.short; }).join(' · ');
+      var papers = s.papersFor('2026', { bafsOption: bafsOption, vaOption: vaOption }).map(function (p) { return p.short; }).join(' · ');
       return h('button', { key: id, type: 'button', onClick: function () { toggle(id); },
         className: cls('group rounded-xl border px-3 py-2.5 text-left transition-all duration-150', selected ? 'border-indigo-500/60 bg-indigo-500/10' : 'border-line bg-[#0a0a0a] hover:border-zinc-600 hover:bg-[#141414]') },
         h('div', { className: 'flex items-center gap-2.5' },
@@ -1984,6 +2241,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       h('h3', { className: 'mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500' }, t('modal.bafsOption')),
       h('div', { className: 'inline-flex items-center gap-1 rounded-lg border border-line bg-black p-1' },
         ['2A', '2B'].map(function (o) { return h('button', { key: o, type: 'button', onClick: function () { setBafsOption(o); }, className: cls('rounded-md px-3 py-1.5 text-[11px] font-medium transition', bafsOption === o ? 'bg-indigo-500 text-white' : 'text-zinc-400 hover:text-zinc-200') }, t(o === '2A' ? 'modal.bafs2A' : 'modal.bafs2B')); }))) : null;
+
+    var vaSection = electives.indexOf('va') >= 0 ? h('section', { className: 'rounded-xl border border-line bg-[#0a0a0a] px-4 py-3' },
+      h('h3', { className: 'mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500' }, tName(SUBJECTS.va)),
+      h('div', { className: 'inline-flex items-center gap-1 rounded-lg border border-line bg-black p-1' },
+        ['p1', 'p2'].map(function (o) { return h('button', { key: o, type: 'button', onClick: function () { setVaOption(o); }, className: cls('rounded-md px-3 py-1.5 text-[11px] font-medium transition', vaOption === o ? 'bg-indigo-500 text-white' : 'text-zinc-400 hover:text-zinc-200') }, t(o === 'p1' ? 'va.p1' : 'va.p2')); }))) : null;
 
     return h('div', {
       ref: panelRef,
@@ -2000,16 +2262,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             h('p', { className: 'mt-1 text-[12px] text-zinc-500' }, t(mode === 'onboarding' ? 'modal.welcomeDesc' : 'modal.configureDesc'))),
           h('div', { className: 'dse-modal-body dse-scroll space-y-6 overflow-y-auto px-6 py-5' },
             h('section', null,
-              h('div', { className: 'mb-2 flex items-center justify-between' }, h('h3', { className: 'text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500' }, t('modal.core')), h('span', { className: 'text-[10px] text-zinc-600' }, t('modal.required', { n: coreSel.length }))),
+              h('div', { className: 'mb-2 flex items-center justify-between' }, h('h3', { className: 'text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500' }, t('modal.core')), h('span', { className: 'text-[10px] tabular-nums text-zinc-600' }, t('modal.required', { n: coreSel.length }))),
               h('div', { className: 'grid gap-2 sm:grid-cols-2' }, coreCards)),
             h('section', null,
-              h('div', { className: 'mb-2 flex items-center justify-between' }, h('h3', { className: 'text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500' }, t('modal.elective')), h('span', { className: cls('text-[10px]', electives.length >= 3 ? 'text-emerald-400' : 'text-zinc-600') }, t('modal.selected', { n: electives.length }))),
+              h('div', { className: 'mb-2 flex items-center justify-between' }, h('h3', { className: 'text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500' }, t('modal.elective')), h('span', { className: cls('text-[10px] tabular-nums', electives.length >= 3 ? 'text-emerald-400' : 'text-zinc-600') }, t('modal.selected', { n: electives.length }))),
               h('div', { className: 'grid gap-2 sm:grid-cols-2' }, electiveCards),
               warn ? h('p', { className: 'mt-2 text-[11px] font-medium text-amber-400' }, warn) : null),
-            bafsSection),
+            bafsSection, vaSection),
           h('div', { className: 'flex items-center justify-end gap-2 border-t border-line px-6 py-4' },
             mode !== 'onboarding' ? h('button', { onClick: onClose, className: 'rounded-lg border border-line px-3.5 py-2 text-[12px] font-medium text-zinc-300 transition hover:border-zinc-600 hover:text-white' }, t('modal.cancel')) : null,
-            h('button', { onClick: function () { onSave({ core: coreSel, electives: electives, bafsOption: bafsOption }); }, className: 'rounded-lg bg-indigo-500 px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-indigo-400 active:scale-[0.98]' }, t(mode === 'onboarding' ? 'modal.enter' : 'modal.saveChanges'))))));
+            h('button', { onClick: function () { onSave({ core: coreSel, electives: electives, bafsOption: bafsOption, vaOption: vaOption }); }, className: 'rounded-lg bg-indigo-500 px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-indigo-400 active:scale-[0.98]' }, t(mode === 'onboarding' ? 'modal.enter' : 'modal.saveChanges'))))));
   }
 
   function ClearAllModal(props) {
@@ -2086,8 +2348,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     var _sub = useState(state.active); var activeSub = _sub[0], setActiveSub = _sub[1];
     var _ce = useState(null); var cutoffError = _ce[0], setCutoffError = _ce[1];
     var _co = useState(function () {
-      /* Show only saved overrides; the defaults appear as placeholders so that saving
-         without changes keeps them blank and lets future default updates apply. */
       var source = state.customCutoffs || {};
       var normalized = {};
       Object.keys(DEFAULT_CUTOFFS).forEach(function (sid) {
@@ -2104,22 +2364,22 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     var panelRef = useRef(null);
     useDialogBehavior(panelRef);
 
+    useEffect(function () {
+      var onKey = function (e) { if (e.key === 'Escape') onClose(); };
+      window.addEventListener('keydown', onKey);
+      return function () { window.removeEventListener('keydown', onKey); };
+    }, [onClose]);
+
     var levels = ['5**', '5*', '5', '4', '3', '2', '1'];
     var currentSubCutoffs = cutoffs[activeSub] || {};
 
     var handleValueChange = function(lvl, val) {
       setCutoffError(null);
       setCutoffs(function(prev) {
-        var n = JSON.parse(JSON.stringify(prev));
-        if (!n[activeSub]) n[activeSub] = {};
-        if (val === '') {
-          n[activeSub][lvl] = '';
-        } else {
-          var parsed = Number(val);
-          n[activeSub][lvl] = isFinite(parsed)
-            ? Math.min(100, Math.max(0, parsed))
-            : '';
-        }
+        var nextSub = Object.assign({}, prev[activeSub]);
+        nextSub[lvl] = val;
+        var n = Object.assign({}, prev);
+        n[activeSub] = nextSub;
         return n;
       });
     };
@@ -2127,8 +2387,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     var resetDefaults = function() {
       setCutoffError(null);
       setCutoffs(function(prev) {
-        var n = JSON.parse(JSON.stringify(prev));
-        /* Clearing the overrides restores the current defaults rather than copying them. */
+        var n = Object.assign({}, prev);
         n[activeSub] = {};
         return n;
       });
@@ -2137,7 +2396,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     var handleSave = function () {
       var error = validateAllCutoffs(cutoffs);
       if (error) {
-        /* Inline and non-blocking: alert() freezes the tab and drops the mobile keyboard. */
         setCutoffError(error);
         return;
       }
@@ -2145,7 +2403,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       onSave(cutoffs);
     };
 
-    return h('div', { ref: panelRef, className: 'fixed inset-0 z-50 overflow-y-auto' },
+    return h('div', { ref: panelRef, role: 'dialog', 'aria-modal': 'true', className: 'fixed inset-0 z-50 overflow-y-auto dse-safe dse-scroll' },
       h('div', { className: 'absolute inset-0 bg-black/70 backdrop-blur-sm anim-fade', onClick: onClose }),
       h('div', { className: 'relative mx-auto my-6 w-[calc(100%-1.5rem)] max-w-lg' },
         h('div', { className: 'anim-pop overflow-hidden rounded-2xl border border-line bg-black shadow-2xl' },
@@ -2163,13 +2421,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             h('div', { className: 'grid grid-cols-2 gap-3 pt-2' },
               levels.map(function(lvl) {
                 return h('div', { key: lvl, className: 'flex items-center justify-between rounded-lg border border-line bg-[#0a0a0a] px-3 py-2' },
-                  h('span', { className: 'text-[12px] font-bold text-indigo-300' }, lvl),
+                  h('span', { className: cls('rounded border px-1.5 py-0.5 text-[11px] font-bold tabular-nums', levelBadgeClasses(lvl, false)) }, lvl),
                   h('div', { className: 'flex items-center gap-1' },
                     h('input', { type: 'number', step: '0.5', min: '0', max: '100', value: currentSubCutoffs[lvl] !== undefined ? currentSubCutoffs[lvl] : '',
                       placeholder: (DEFAULT_CUTOFFS[activeSub] && DEFAULT_CUTOFFS[activeSub][lvl] !== undefined) ? String(DEFAULT_CUTOFFS[activeSub][lvl]) : '',
                       'aria-label': lvl + ' threshold',
                       onChange: function(e) { handleValueChange(lvl, e.target.value); },
-                      className: 'w-16 text-right rounded border border-line bg-black px-2 py-1 text-[12px] font-mono text-emerald-400 outline-none focus:border-indigo-500' }),
+                      className: 'w-16 text-right rounded border border-line bg-black px-2 py-1 text-[12px] font-mono tabular-nums text-emerald-400 outline-none focus:border-indigo-500' }),
                     h('span', { className: 'text-[10px] text-zinc-500' }, '%')));
               })),
             cutoffError ? h('p', { role: 'alert', className: 'rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-[11px] font-medium leading-snug text-red-300' }, cutoffError) : null,
@@ -2188,10 +2446,25 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     var state = props.state;
     var safeActiveId = SUBJECTS[state.active] ? state.active : 'eng';
     var activeSubj = SUBJECTS[safeActiveId];
+    var _todayStr = useState(getLocalDateStr);
+    var todayStr = _todayStr[0], setTodayStr = _todayStr[1];
+    useEffect(function () {
+      var checkMidnight = function () {
+        var cur = getLocalDateStr();
+        setTodayStr(function (prev) { return prev === cur ? prev : cur; });
+      };
+      var interval = setInterval(checkMidnight, 60000);
+      document.addEventListener('visibilitychange', checkMidnight);
+      return function () {
+        clearInterval(interval);
+        document.removeEventListener('visibilitychange', checkMidnight);
+      };
+    }, []);
     var examDateStr = EXAM_DATES[safeActiveId] || '2027-04-08';
-    var target = new Date(examDateStr + 'T09:00:00');
-    var diff = target - new Date();
-    var rawDays = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    var target = new Date(examDateStr + 'T00:00:00');
+    var todayMidnight = new Date(todayStr + 'T00:00:00');
+    var diff = target - todayMidnight;
+    var rawDays = Math.round(diff / (1000 * 60 * 60 * 24));
     var days = Math.max(0, rawDays);
 
     var perf = calculateSubjectPerformance(safeActiveId, state);
@@ -2200,23 +2473,20 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       h('div', { title: t('stats.target') + ' ' + examDateStr, className: 'flex flex-col justify-center rounded-lg border border-line bg-[#0a0a0a] px-2.5 py-1.5' },
         h('div', { className: 'truncate text-[9px] font-semibold uppercase leading-none tracking-[0.14em] text-zinc-500' }, t('stats.countdown')),
         h('div', { className: 'mt-0.5 flex items-baseline gap-1' },
-          h('span', { className: 'text-base font-bold leading-none text-emerald-400' }, String(days)),
+          h('span', { className: 'text-base font-bold leading-none tabular-nums text-emerald-400' }, String(days)),
           h('span', { className: 'text-[10px] leading-none text-zinc-500' }, t('stats.daysToDSE')))),
       h('div', {
         className: 'flex flex-col justify-center rounded-lg border border-line bg-[#0a0a0a] px-2.5 py-1.5',
-        /* The exclusion note is long enough to wrap the card; keep it as a tooltip instead. */
         title: perf.untrackedWeight > 0 ? t('stats.excludedWeight', { tracked: perf.trackedWeight, missing: perf.untrackedWeight }) : null
       },
         h('div', { className: 'flex items-center justify-between gap-1' },
           h('div', { className: 'min-w-0 truncate text-[9px] font-semibold uppercase leading-none tracking-[0.14em] text-zinc-500' }, t('stats.weighted') + ' — ' + (activeSubj ? activeSubj.abbr : '')),
-          /* On phones the card keeps only the headline; the pill returns from sm up. */
           perf.provisional ? h('span', { className: 'hidden shrink-0 rounded border border-amber-500/30 bg-amber-500/20 px-1.5 py-0.5 text-[9px] font-bold uppercase leading-none tracking-wide text-amber-300 sm:inline' }, t('stats.provisional')) : null),
         perf.weightedPct !== null
           ? h('div', { className: 'mt-0.5 flex items-baseline gap-1.5' },
-              h('span', { className: 'shrink-0 text-base font-bold leading-none text-indigo-400' }, perf.weightedPct + '%'),
-              perf.estimatedLevel ? h('span', { className: cls('shrink-0 rounded px-1 py-0.5 text-[9px] font-bold leading-none border', perf.provisional ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30') }, perf.provisional ? '~' + perf.estimatedLevel : perf.estimatedLevel) : null,
-              /* Coverage detail is a desktop-only second voice next to the score. */
-              h('span', { className: cls('hidden min-w-0 truncate text-[9px] leading-none sm:block', perf.provisional ? 'text-amber-400' : 'text-zinc-500') },
+              h('span', { className: 'shrink-0 text-base font-bold leading-none tabular-nums text-indigo-400' }, perf.weightedPct + '%'),
+              perf.estimatedLevel ? h('span', { className: cls('shrink-0 rounded px-1 py-0.5 text-[9px] font-bold leading-none tabular-nums border', levelBadgeClasses(perf.estimatedLevel, perf.provisional)) }, perf.provisional ? '~' + perf.estimatedLevel : perf.estimatedLevel) : null,
+              h('span', { className: cls('hidden min-w-0 truncate text-[9px] leading-none tabular-nums sm:block', perf.provisional ? 'text-amber-400' : 'text-zinc-500') },
                 perf.provisional
                   ? t('stats.coverageIncomplete', { scored: perf.scoredPaperTypes, total: perf.totalPaperTypes })
                   : t('stats.coverageComplete', { total: perf.totalPaperTypes })))
@@ -2237,14 +2507,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     var _cm = useState(false); var showCutoffModal = _cm[0], setShowCutoffModal = _cm[1];
     var _dr = useState(null); var drawer = _dr[0], setDrawer = _dr[1];
     var _sb = useState(false); var sidebarOpen = _sb[0], setSidebarOpen = _sb[1];
-    var _tp = useState(null); var tip = _tp[0], setTip = _tp[1];
+    var tipRef = useRef(null);
     var _ts = useState(null); var toast = _ts[0], setToast = _ts[1];
     var _pi = useState(null); var pendingImport = _pi[0], setPendingImport = _pi[1];
     var _se = useState(null); var storageError = _se[0], setStorageError = _se[1];
     var fileRef = useRef(null);
     var _ca = useState(false);
     var showClearConfirm = _ca[0], setShowClearConfirm = _ca[1];
-    /* Remembers what had focus before a dialog opened, so it can be restored on close. */
     var triggerRef = useRef(null);
     var rememberTrigger = function () { triggerRef.current = document.activeElement; };
 
@@ -2267,14 +2536,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       }
     }, [state.theme]);
 
-    /* Closing the last dialog returns focus (and therefore scroll position) to its opener. */
     useEffect(function () {
       var anyDialog = !!drawer || showOnboarding || showSettings || showCutoffModal || showClearConfirm || !!pendingImport;
       if (anyDialog) return;
       var el = triggerRef.current;
       triggerRef.current = null;
-      /* Sidebar triggers sit in a panel that is off-canvas on mobile once the dialog opens;
-         send focus to the visible menu button instead of a hidden element. */
       if (el && el.closest && el.closest('aside') && !window.matchMedia('(min-width: 1024px)').matches) {
         el = document.querySelector('[data-dse-menu]');
       }
@@ -2286,12 +2552,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     var activeIds = useMemo(function () { return state.core.concat(state.electives); }, [state.core, state.electives]);
     useEffect(function () { if (activeIds.indexOf(state.active) < 0) { setState(function (s) { var n = Object.assign({}, s); n.active = activeIds[0] || 'eng'; return n; }); } }, [activeIds, state.active]);
 
-    var overall = useMemo(function () {
-      var total = 0, done = 0;
-      activeIds.forEach(function (id) { var p = subjectProgress(id, state); total += p.total; done += p.done; });
-      return { total: total, done: done, pct: total ? Math.round((done / total) * 100) : 0 };
-    }, [activeIds, state]);
-    
     var handleCancelClearAll = useCallback(function () {
       setShowClearConfirm(false);
     }, []);
@@ -2299,11 +2559,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     var tipProps = useCallback(function (text) {
       return {
         onMouseEnter: function (e) {
+          var el = tipRef.current;
+          if (!el) return;
           var rect = e.currentTarget.getBoundingClientRect();
-          setTip({ text: text, x: rect.left + rect.width / 2, y: rect.top });
+          el.textContent = text;
+          el.style.left = (rect.left + rect.width / 2) + 'px';
+          el.style.top = Math.max(8, rect.top - 34) + 'px';
+          el.style.opacity = '1';
         },
         onMouseLeave: function () {
-          setTip(null);
+          if (tipRef.current) tipRef.current.style.opacity = '0';
         }
       };
     }, []);
@@ -2384,7 +2649,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
       setDrawer(null);
       var totalMarks = (SUBJECTS[sid] && SUBJECTS[sid].totalMarks) ? SUBJECTS[sid].totalMarks[pid] : 100;
-      /* Report what actually happened: a save with nothing in it deletes the entry. */
       var savedScore = typeof data.score === 'string' ? data.score.trim() : '';
       var savedNotes = typeof data.notes === 'string' ? data.notes.trim() : '';
       var savedTime = Number(data.timeSpent);
@@ -2403,6 +2667,123 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       setDrawer({ sid: sid, row: row, pid: pid });
     }, []);
 
+    var activePaperList = useMemo(function () {
+      var safeId = SUBJECTS[state.active] ? state.active : 'eng';
+      var subj = SUBJECTS[safeId];
+      if (!subj) return [];
+      var papersByRow = {};
+      subj.rows.forEach(function (r) {
+        papersByRow[r] = subj.papersFor(r, { bafsOption: state.bafsOption, vaOption: state.vaOption });
+      });
+      var filtered = subj.rows.filter(function (r) {
+        if (state.filterMode === 'all') return true;
+        var papers = papersByRow[r];
+        if (state.filterMode === 'redo') {
+          return papers.some(function (p) { return paperNeedsRedo(subj, p.id, state.entries[ek(safeId, r, p.id)], state); });
+        }
+        var hasDone = papers.some(function (p) { var e = state.entries[ek(safeId, r, p.id)]; return e && e.done; });
+        var hasPending = papers.some(function (p) { var e = state.entries[ek(safeId, r, p.id)]; return !e || !e.done; });
+        return state.filterMode === 'done' ? hasDone : hasPending;
+      });
+      var rowsToUse = filtered.slice();
+      if (state.sortMode === 'completion') {
+        rowsToUse.sort(function (a, b) {
+          var getRatio = function (r) {
+            var papers = papersByRow[r];
+            if (!papers.length) return 0;
+            var doneCount = papers.filter(function (p) { var e = state.entries[ek(safeId, r, p.id)]; return e && e.done; }).length;
+            return doneCount / papers.length;
+          };
+          return getRatio(b) - getRatio(a);
+        });
+      } else if (state.sortMode === 'score') {
+        rowsToUse.sort(function (a, b) {
+          var getRowScore = function (r) {
+            var papers = papersByRow[r];
+            var totalW = 0, weightedSum = 0;
+            papers.forEach(function (p) {
+              var e = state.entries[ek(safeId, r, p.id)];
+              if (e && e.done && !e.ungraded && e.score) {
+                var parsed = parsePaperScore(e.score, subj.totalMarks ? subj.totalMarks[p.id] : 100);
+                if (parsed && !isNaN(parsed.pct)) {
+                  var w = (subj.weighting && subj.weighting[p.id]) || 1;
+                  weightedSum += parsed.pct * w;
+                  totalW += w;
+                }
+              }
+            });
+            return totalW > 0 ? (weightedSum / totalW) : -1;
+          };
+          return getRowScore(b) - getRowScore(a);
+        });
+      } else if (state.sortMode === 'time') {
+        rowsToUse.sort(function (a, b) {
+          var getRowTime = function (r) {
+            return papersByRow[r].reduce(function (acc, p) {
+              var e = state.entries[ek(safeId, r, p.id)];
+              return acc + (e && e.timeSpent ? parseInt(e.timeSpent, 10) : 0);
+            }, 0);
+          };
+          return getRowTime(b) - getRowTime(a);
+        });
+      }
+      var list = [];
+      rowsToUse.forEach(function (r) {
+        papersByRow[r].forEach(function (p) {
+          list.push({ sid: safeId, row: r, pid: p.id });
+        });
+      });
+      return list;
+    }, [state.active, state.bafsOption, state.vaOption, state.filterMode, state.sortMode, state.targetLevel, state.customCutoffs, state.entries]);
+
+    var drawerNav = useMemo(function () {
+      if (!drawer) return { prev: null, next: null };
+      var idx = -1;
+      for (var i = 0; i < activePaperList.length; i++) {
+        var item = activePaperList[i];
+        if (item.sid === drawer.sid && item.row === drawer.row && item.pid === drawer.pid) {
+          idx = i;
+          break;
+        }
+      }
+      return {
+        prev: idx > 0 ? activePaperList[idx - 1] : null,
+        next: (idx >= 0 && idx < activePaperList.length - 1) ? activePaperList[idx + 1] : null
+      };
+    }, [drawer, activePaperList]);
+
+    useEffect(function () {
+      var anyModal = showOnboarding || showSettings || showCutoffModal || showClearConfirm || !!pendingImport;
+      if (anyModal || drawer) return;
+      var onKeyDown = function (e) {
+        if (e.key === 'Escape' && sidebarOpen) {
+          e.preventDefault();
+          setSidebarOpen(false);
+          return;
+        }
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+        var tag = e.target && e.target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target && e.target.isContentEditable)) return;
+
+        if (e.key >= '1' && e.key <= '7') {
+          var idx = parseInt(e.key, 10) - 1;
+          if (activeIds[idx]) {
+            e.preventDefault();
+            setActive(activeIds[idx]);
+          }
+        } else if (e.key === ']' && activePaperList.length > 0) {
+          e.preventDefault();
+          openDrawer(activePaperList[0].sid, activePaperList[0].row, activePaperList[0].pid);
+        } else if (e.key === '[' && activePaperList.length > 0) {
+          var lastP = activePaperList[activePaperList.length - 1];
+          e.preventDefault();
+          openDrawer(lastP.sid, lastP.row, lastP.pid);
+        }
+      };
+      window.addEventListener('keydown', onKeyDown);
+      return function () { window.removeEventListener('keydown', onKeyDown); };
+    }, [showOnboarding, showSettings, showCutoffModal, showClearConfirm, pendingImport, drawer, sidebarOpen, activeIds, activePaperList, setActive, openDrawer]);
+
     var handleExport = useCallback(function () {
       var blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' }); var url = URL.createObjectURL(blob); var a = document.createElement('a');
       a.href = url; a.download = 'dsetrack-backup-' + new Date().toISOString().slice(0, 10) + '.json';
@@ -2410,7 +2791,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     }, [state]);
 
     var handleExportCsv = useCallback(function () {
-      /* The BOM is what stops Excel on Windows from showing Chinese as mojibake. */
       var blob = new Blob(['\uFEFF' + buildProgressCsv(state)], { type: 'text/csv;charset=utf-8' });
       var url = URL.createObjectURL(blob);
       var a = document.createElement('a');
@@ -2428,7 +2808,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         try {
           var data = JSON.parse(String(reader.result));
           var nextState = buildImportedState(data);
-          /* Hold the parsed backup until the user confirms replacing current data. */
           setPendingImport({ fileName: file.name || 'backup.json', state: nextState });
         } catch (err) {
           setToast(t('toast.importFailed'));
@@ -2454,7 +2833,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       setState(function (s) {
         var combined = cfg.core.concat(cfg.electives);
         var active = combined.indexOf(s.active) >= 0 ? s.active : (cfg.electives[0] || cfg.core[0] || 'eng');
-        return Object.assign({}, s, { onboarded: true, core: cfg.core, electives: cfg.electives, bafsOption: cfg.bafsOption, active: active });
+        return Object.assign({}, s, { onboarded: true, core: cfg.core, electives: cfg.electives, bafsOption: cfg.bafsOption, vaOption: cfg.vaOption || s.vaOption, active: active });
       });
       
       setShowSettings(false); 
@@ -2473,7 +2852,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         levels.forEach(function (level) {
           var value = newCutoffs[sid] && newCutoffs[sid][level];
 
-          /* Blank means "use the default", so leave the level out instead of storing a dead entry. */
           if (value === '' || value === null || value === undefined) return;
 
           var parsed = Number(value);
@@ -2491,7 +2869,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         return;
       }
 
-      /* Every save path validates ordering, not just the modal's own button. */
       var orderErr = validateAllCutoffs(cleaned);
       if (orderErr) {
         setToast(t('toast.cutoffInvalid'));
@@ -2551,23 +2928,36 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       return { subject: subject, paper: paper, entry: state.entries[ek(drawer.sid, drawer.row, drawer.pid)] };
     }, [drawer, state]);
 
-    var drawerEl = drawerData ? h(Drawer, { key: drawer.sid + '-' + drawer.row + '-' + drawer.pid, subject: drawerData.subject, row: drawer.row, paper: drawerData.paper, entry: drawerData.entry, customCutoffs: state.customCutoffs, onClose: function () { setDrawer(null); }, onSave: function (data) { saveEntry(drawer.sid, drawer.row, drawer.pid, data); }, onClear: function () { clearEntry(drawer.sid, drawer.row, drawer.pid); } }) : null;
+    var drawerEl = drawerData ? h(Drawer, {
+      key: drawer.sid + '-' + drawer.row + '-' + drawer.pid,
+      subject: drawerData.subject,
+      row: drawer.row,
+      paper: drawerData.paper,
+      entry: drawerData.entry,
+      customCutoffs: state.customCutoffs,
+      onStepPrev: drawerNav.prev ? function () { setDrawer(drawerNav.prev); } : null,
+      onStepNext: drawerNav.next ? function () { setDrawer(drawerNav.next); } : null,
+      onClose: function () { setDrawer(null); },
+      onSave: function (data) { saveEntry(drawer.sid, drawer.row, drawer.pid, data); },
+      onClear: function () { clearEntry(drawer.sid, drawer.row, drawer.pid); }
+    }) : null;
     var modalEl = (showOnboarding || showSettings) ? h(SubjectModal, { state: state, mode: showOnboarding ? 'onboarding' : 'settings', onClose: function () { setShowSettings(false); }, onSave: handleSaveConfig }) : null;
     var cutoffModalEl = showCutoffModal ? h(CutoffModal, { state: state, onClose: function() { setShowCutoffModal(false); }, onSave: handleSaveCutoffs }) : null;
 
-    var tipEl = tip ? h('div', { className: 'dse-tooltip pointer-events-none fixed z-[100] max-w-[240px] -translate-x-1/2 rounded-md border border-line bg-[#1a1a1a] px-2 py-1 text-[10px] font-medium leading-snug text-zinc-200 shadow-xl', style: { left: tip.x, top: Math.max(8, tip.y - 34) } }, tip.text) : null;
-    var toastEl = toast ? h('div', { className: 'fixed left-1/2 z-[110] -translate-x-1/2 anim-toast', style: { bottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))' } }, h('div', { className: 'flex items-center gap-2 rounded-xl border border-line bg-[#141414] px-4 py-2.5 text-[12px] font-medium text-zinc-100 shadow-2xl' }, h('span', { className: 'grid h-4 w-4 place-items-center rounded-full bg-emerald-500 text-[#04140d]' }, h(CheckIcon, { className: 'h-2.5 w-2.5' })), toast)) : null;
+    var tipEl = h('div', { ref: tipRef, 'aria-hidden': 'true', className: 'dse-tooltip pointer-events-none fixed z-[100] max-w-[240px] -translate-x-1/2 rounded-md border border-line bg-[#1a1a1a] px-2 py-1 text-[10px] font-medium leading-snug text-zinc-200 shadow-xl transition-opacity duration-75', style: { opacity: 0, left: 0, top: 0 } });
+    var toastEl = toast ? h('div', { className: 'fixed left-1/2 z-[110] -translate-x-1/2 anim-toast bottom-[calc(4.1rem+env(safe-area-inset-bottom,0px))] lg:bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))]' }, h('div', { className: 'flex items-center gap-2 rounded-xl border border-line bg-[#141414] px-4 py-2.5 text-[12px] font-medium text-zinc-100 shadow-2xl' }, h('span', { className: 'grid h-4 w-4 place-items-center rounded-full bg-emerald-500 text-[#04140d]' }, h(CheckIcon, { className: 'h-2.5 w-2.5' })), toast)) : null;
     var sidebarBackdrop = sidebarOpen ? h('div', { className: 'fixed inset-0 z-30 bg-black/60 backdrop-blur-sm lg:hidden', onClick: function () { setSidebarOpen(false); } }) : null;
 
     return h('div', { className: 'flex h-app overflow-hidden bg-black font-sans text-zinc-200' },
       sidebarBackdrop,
       h('div', { className: cls('fixed left-0 top-0 z-40 h-app transition-transform duration-300 lg:static lg:h-full lg:translate-x-0', sidebarOpen ? 'translate-x-0' : '-translate-x-full') },
-        h(Sidebar, { state: state, activeIds: activeIds, overall: overall, setActive: setActive, onSettings: function () { rememberTrigger(); setShowSettings(true); setSidebarOpen(false); }, onOpenCutoffs: function() { rememberTrigger(); setShowCutoffModal(true); setSidebarOpen(false); }, onExport: handleExport, onExportCsv: handleExportCsv, onImport: function () { rememberTrigger(); if (fileRef.current) fileRef.current.click(); } /* keep the panel open: focus returns to this button */, onClearAll: function () { rememberTrigger(); setShowClearConfirm(true); }, onClose: function () { setSidebarOpen(false); }, toggleLanguage: toggleLanguage, toggleTheme: toggleTheme })),
+        h(Sidebar, { state: state, activeIds: activeIds, setActive: setActive, onSettings: function () { rememberTrigger(); setShowSettings(true); setSidebarOpen(false); }, onOpenCutoffs: function() { rememberTrigger(); setShowCutoffModal(true); setSidebarOpen(false); }, onExport: handleExport, onExportCsv: handleExportCsv, onImport: function () { rememberTrigger(); if (fileRef.current) fileRef.current.click(); }, onClearAll: function () { rememberTrigger(); setShowClearConfirm(true); }, onClose: function () { setSidebarOpen(false); }, toggleLanguage: toggleLanguage, toggleTheme: toggleTheme })),
       h('main', { className: 'flex min-w-0 flex-1 flex-col overflow-hidden' },
         storageBanner,
         h('div', { className: 'flex-1 overflow-y-auto dse-scroll' },
           h(StatCards, { state: state }),
-          h(SubjectPanel, { state: state, setState: setState, activeId: state.active, tipProps: tipProps, openDrawer: openDrawer, toggleEntry: toggleEntry, onOpenMenu: function () { setSidebarOpen(true); }, onToggleLanguage: toggleLanguage }))),
+          h(SubjectPanel, { state: state, setState: setState, activeId: state.active, tipProps: tipProps, openDrawer: openDrawer, toggleEntry: toggleEntry, onOpenMenu: function () { setSidebarOpen(true); }, onToggleLanguage: toggleLanguage })),
+        h(BottomSubjectBar, { state: state, activeIds: activeIds, setActive: setActive })),
       h('input', { ref: fileRef, type: 'file', accept: 'application/json,.json', className: 'hidden', onChange: handleImportFile }),
       drawerEl, modalEl, cutoffModalEl, clearAllModalEl, importModalEl, tipEl, toastEl);
   }
