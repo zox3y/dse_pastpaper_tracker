@@ -116,7 +116,40 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   padding: 0;
 }
 
-  /* ---------- LIGHT MODE ---------- */
+/* ---------- 5** AURORA PRISM BADGE ---------- */
+  @keyframes dseAuroraSweep {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  .dse-badge-5ss {
+    background: linear-gradient(120deg, #3730a3 0%, #6d28d9 32%, #0284c7 68%, #047857 100%);
+    background-size: 200% 200%;
+    animation: dseAuroraSweep 5s ease-in-out infinite;
+    color: #ffffff !important;
+    border-color: rgba(125, 211, 252, 0.55) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 0 12px rgba(56, 189, 248, 0.35);
+  }
+  body.theme-light .dse-badge-5ss {
+    background: linear-gradient(120deg, #312e81 0%, #5b21b6 32%, #0369a1 68%, #065f46 100%);
+    background-size: 200% 200%;
+    animation: dseAuroraSweep 5s ease-in-out infinite;
+    color: #ffffff !important;
+    border-color: rgba(3, 105, 161, 0.45) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 2px 8px rgba(3, 105, 161, 0.28);
+  }
+
+    /* ---------- 5* WARM GOLD GLOW ---------- */
+    .dse-badge-5s {
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.28), inset 0 1px 0 rgba(252, 211, 77, 0.2);
+    }
+    body.theme-light .dse-badge-5s {
+      box-shadow: 0 1px 6px rgba(217, 119, 6, 0.22);
+    }
+
+    /* ---------- LIGHT MODE ---------- */
   body.theme-light { --ring-track: #e4e4e7; background: #f4f4f5; color: #18181b; }
   body.theme-light .bg-black,
   body.theme-light .bg-\[\#0a0a0a\],
@@ -988,11 +1021,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
   function levelBadgeClasses(level, provisional) {
     var tier;
-    if (level === '5**') tier = 'bg-amber-500/20 text-amber-300 border-amber-500/40';
-    else if (level === '5*') tier = 'bg-violet-500/20 text-violet-300 border-violet-500/40';
-    else if (level === '5') tier = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
-    else if (level === '4') tier = 'bg-sky-500/20 text-sky-300 border-sky-500/40';
-    else if (level === '3') tier = 'bg-slate-500/20 text-slate-300 border-slate-500/40';
+    if (level === '5**') tier = 'dse-badge-5ss';
+    else if (level === '5*') tier = 'dse-badge-5s bg-amber-500/20 text-amber-300 border-amber-500/40';
+    else if (level === '5') tier = 'bg-violet-500/20 text-violet-300 border-violet-500/40';
+    else if (level === '4') tier = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+    else if (level === '3') tier = 'bg-sky-500/20 text-sky-300 border-sky-500/40';
+    else if (level === '2') tier = 'bg-slate-500/20 text-slate-300 border-slate-500/40';
     else tier = 'bg-rose-500/20 text-rose-300 border-rose-500/40';
     return cls(tier, provisional ? 'border-dashed' : '');
   }
