@@ -1488,7 +1488,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       className: 'shrink-0 border-t border-line bg-black/95 px-2.5 pt-1.5 lg:hidden',
       style: { paddingBottom: 'max(0.45rem, env(safe-area-inset-bottom, 0px))' }
     },
-      h('div', { className: 'flex items-center gap-1.5 overflow-x-auto no-scrollbar' },
+      h('div', { className: 'mx-auto flex w-fit max-w-full items-center gap-1.5 overflow-x-auto no-scrollbar' },
         activeIds.map(function (id) {
           var s = SUBJECTS[id];
           if (!s) return null;
